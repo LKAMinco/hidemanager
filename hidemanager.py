@@ -226,6 +226,10 @@ class HIDEMANAGER_OT_Selected(Operator):
             has_vertex_group = ['MESH', 'SURFACE', 'META', 'FONT', 'GPENCIL', 'GREASEPENCIL']
             has_shape_key = ['MESH', 'CURVE', 'SURFACE', 'META', 'FONT', 'GPENCIL', 'GREASEPENCIL']
             has_constraint = ['MESH', 'CURVE', 'SURFACE', 'META', 'FONT', 'GPENCIL', 'GREASEPENCIL']
+            if item.line_type == 'MODIFIER':
+                logging.log(logging.WARNING, str(item.modifier_type))
+                logging.log(logging.WARNING, item.mod_items)
+
             for obj in scene.view_layers[0].objects:
                 if item.line_type == 'CONTAINS':
                     if item.contains == '':

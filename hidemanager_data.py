@@ -2,7 +2,7 @@ import logging
 
 import bpy
 from bpy.props import EnumProperty, StringProperty, BoolProperty, PointerProperty
-from bpy.types import PropertyGroup, Modifier
+from bpy.types import PropertyGroup, Modifier, GpencilModifier
 
 
 # TODO implement not implemented filters
@@ -69,8 +69,26 @@ class HIDEMANAGER_PG_CustomCollection(PropertyGroup):
     ])
 
     mod_items = []
+    idx = 0
     for mod in Modifier.bl_rna.properties['type'].enum_items:
-        mod_items.append((mod.identifier, mod.name, mod.description, mod.icon, len(mod_items) + 1))
+        if len(mod_items) == 0:
+            mod_items.append(('', 'Modify', '', '', 0))
+        elif len(mod_items) == 11:
+            mod_items.append(('', 'Generate', '', '', 0))
+            idx = -1
+        elif len(mod_items) == 32:
+            mod_items.append(('', 'Deform', '', '', 0))
+            idx = -2
+        elif len(mod_items) == 49:
+            mod_items.append(('', 'Phisics', '', '', 0))
+            idx = -3
+        mod_items.append((mod.identifier, mod.name, mod.description, mod.icon, len(mod_items) + idx))
+
+    for mod in GpencilModifier.bl_rna.properties['type'].enum_items:
+        if len(mod_items) == 61:
+            mod_items.append(('', 'Grease Pencil', '', '', 0))
+            idx = -4
+        mod_items.append((mod.identifier, mod.name, mod.description, mod.icon, len(mod_items) + idx))
 
     modifier_type: EnumProperty(default='MIRROR', name='Modifier', description='Type of modifier', items=mod_items)
 
