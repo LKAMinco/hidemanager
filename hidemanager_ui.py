@@ -1,6 +1,8 @@
 import bpy
 from bpy.props import EnumProperty, StringProperty
 from bpy.types import PropertyGroup, UIList, Panel
+
+
 class HIDEMANAGER_UL_Items(UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
         split = layout.split(factor=0.03)
@@ -83,36 +85,32 @@ class HIDEMANAGER_PT_List(Panel):
         row = col.row(align=True)
         row.label(text='Use only active group')
         row.prop(scene, 'hidemanager_only_active', text=str(scene.hidemanager_only_active), toggle=True, slider=True)
-        row = col.row()
+        row = col.row(align=True)
 
         if scene.hidemanager_only_active:
-            row.operator('hidemanager.selected', text='Select Objects', icon='RESTRICT_SELECT_OFF').select = True
+            hdmg_op = 'hidemanager.selected'
+            row.operator(hdmg_op, text='Select Objects', icon='RESTRICT_SELECT_OFF').operation = 'SELECT'
+            row.operator(hdmg_op, text='Deselect Objects',
+                         icon='RESTRICT_SELECT_ON').operation = 'DESELECT'
             row = col.row(align=True)
-            row.operator('hidemanager.selected', text='Hide', icon='HIDE_OFF').hide = True
-            row.operator('hidemanager.selected', text='Unhide', icon='HIDE_ON').hide = False
+            row.operator(hdmg_op, text='Hide Objects', icon='HIDE_ON').operation = 'HIDE'
+            row.operator(hdmg_op, text='Show Objects', icon='HIDE_OFF').operation = 'SHOW'
             row = col.row(align=True)
-            op = row.operator('hidemanager.selected', text='Enable In Renders', icon='RESTRICT_RENDER_OFF')
-            op.hide = False
-            op.render = True
-            op.viewport = False
-            op = row.operator('hidemanager.selected', text='Disable In Renders', icon='RESTRICT_RENDER_ON')
-            op.hide = True
-            op.render = True
-            op.viewport = False
+            row.operator(hdmg_op, text='Disable In Renders',
+                         icon='RESTRICT_RENDER_ON').operation = 'DISABLE_RENDER'
+            row.operator(hdmg_op, text='Enable In Renders',
+                         icon='RESTRICT_RENDER_OFF').operation = 'ENABLE_RENDER'
             row = col.row(align=True)
-            op = row.operator('hidemanager.selected', text='Enable In Viewports', icon='RESTRICT_VIEW_OFF')
-            op.hide = False
-            op.render = False
-            op.viewport = True
-            op = row.operator('hidemanager.selected', text='Disable In Viewports', icon='RESTRICT_VIEW_ON')
-            op.hide = True
-            op.render = False
-            op.viewport = True
+            row.operator(hdmg_op, text='Disable In Viewports',
+                         icon='RESTRICT_VIEW_ON').operation = 'DISABLE_VIEWPORT'
+            row.operator(hdmg_op, text='Enable In Viewports',
+                         icon='RESTRICT_VIEW_OFF').operation = 'ENABLE_VIEWPORT'
         else:
-            row.operator('hidemanager.all', text='Select Objects', icon='RESTRICT_SELECT_OFF').select = True
+            hdmng_op = 'hidemanager.all'
+            row.operator(hdmng_op, text='Select Objects', icon='RESTRICT_SELECT_OFF').select = True
             row = col.row(align=True)
-            row.operator('hidemanager.all', text='Hide', icon='HIDE_OFF').hide = True
-            row.operator('hidemanager.all', text='Unhide', icon='HIDE_ON').hide = False
+            row.operator(hdmng_op, text='Hide', icon='HIDE_OFF').hide = True
+            row.operator(hdmng_op, text='Unhide', icon='HIDE_ON').hide = False
 
 
 class HIDEMANAGER_PT_GroupList(Panel):

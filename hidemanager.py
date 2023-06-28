@@ -179,15 +179,35 @@ class HIDEMANAGER_OT_Selected(Operator):
 
     select: BoolProperty(default=False)
 
+    operation: EnumProperty(default='SELECT', items=[
+        ('SELECT', 'Select', 'Select objects by selected filter'),
+        ('DESELECT', 'Deselect', 'Deselect objects by selected filter'),
+        ('HIDE', 'Hide', 'Hide objects by selected filter'),
+        ('SHOW', 'Show', 'Show objects by selected filter'),
+        ('ENABLE_RENDER', 'Enable Render', 'Enable objects in render by selected filter'),
+        ('DISABLE_RENDER', 'Disable Render', 'Disable objects in render by selected filter'),
+        ('ENABLE_VIEWPORT', 'Enable Viewport', 'Enable objects in viewport by selected filter'),
+        ('DISABLE_VIEWPORT', 'Disable Viewport', 'Disable objects in viewport by selected filter'),
+    ])
+
     @classmethod
     def description(cls, context, properties):
-        if properties.select:
+        if properties.operation == 'SELECT':
             return 'Select objects by selected filter'
-        else:
-            if properties.hide:
-                return 'Hide objects by selected filter'
-            else:
-                return 'Show objects by selected filter'
+        elif properties.operation == 'DESELECT':
+            return 'Deselect objects by selected filter'
+        elif properties.operation == 'HIDE':
+            return 'Hide objects by selected filter'
+        elif properties.operation == 'SHOW':
+            return 'Show objects by selected filter'
+        elif properties.operation == 'ENABLE_RENDER':
+            return 'Enable objects in render by selected filter'
+        elif properties.operation == 'DISABLE_RENDER':
+            return 'Disable objects in render by selected filter'
+        elif properties.operation == 'ENABLE_VIEWPORT':
+            return 'Enable objects in viewport by selected filter'
+        elif properties.operation == 'DISABLE_VIEWPORT':
+            return 'Disable objects in viewport by selected filter'
 
     def execute(self, context):
         scene = context.scene
@@ -201,53 +221,38 @@ class HIDEMANAGER_OT_Selected(Operator):
             pass
 
         else:
+            has_material = ['MESH', 'CURVE', 'SURFACE', 'META', 'FONT', 'VOLUME', 'GPENCIL', 'GREASEPENCIL']
+            has_modifier = ['MESH', 'CURVE', 'SURFACE', 'META', 'FONT', 'GPENCIL', 'GREASEPENCIL']
+            has_vertex_group = ['MESH', 'SURFACE', 'META', 'FONT', 'GPENCIL', 'GREASEPENCIL']
+            has_shape_key = ['MESH', 'CURVE', 'SURFACE', 'META', 'FONT', 'GPENCIL', 'GREASEPENCIL']
+            has_constraint = ['MESH', 'CURVE', 'SURFACE', 'META', 'FONT', 'GPENCIL', 'GREASEPENCIL']
             for obj in scene.view_layers[0].objects:
                 if item.line_type == 'CONTAINS':
                     if item.contains == '':
                         break
                     if item.contains in obj.name:
-                        if self.select:
-                            obj.select_set(True)
-                        else:
-                            if self.render:
-                                obj.hide_render = self.hide
-                            elif self.viewport:
-                                obj.hide_viewport = self.hide
-                            else:
-                                obj.hide_set(self.hide)
+                        self.objectAction(obj)
 
                 elif item.line_type == 'TYPE':
                     if obj.type == item.object_type:
-                        if self.select:
-                            obj.select_set(True)
-                        else:
-                            obj.hide_set(self.hide)
+                        self.objectAction(obj)
 
                 elif item.line_type == 'TYPE_IGNORE':
                     if obj.type != item.object_type:
-                        if self.select:
-                            obj.select_set(True)
-                        else:
-                            obj.hide_set(self.hide)
+                        self.objectAction(obj)
 
                 elif item.line_type == "IGNORE":
                     if item.contains_ignore == '':
                         break
                     if item.contains_ignore not in obj.name:
-                        if self.select:
-                            obj.select_set(True)
-                        else:
-                            obj.hide_set(self.hide)
+                        self.objectAction(obj)
 
                 elif item.line_type == 'MATERIAL':
                     if obj.type == 'MESH' or obj.type == 'CURVE' or obj.type == 'SURFACE' or obj.type == "META" or obj.type == "FONT":
                         if item.material is None:
                             break
                         if item.material.name in obj.data.materials:
-                            if self.select:
-                                obj.select_set(True)
-                            else:
-                                obj.hide_set(self.hide)
+                            self.objectAction(obj)
 
                 elif item.line_type == 'MATERIAL_CONTAINS':
                     if obj.type == 'MESH' or obj.type == 'CURVE' or obj.type == 'SURFACE' or obj.type == "META" or obj.type == "FONT":
@@ -286,6 +291,30 @@ class HIDEMANAGER_OT_Selected(Operator):
 
         self.select = False
         return {'FINISHED'}
+
+    def objectAction(self, obj: bpy.types.Object) -> None:
+        """Performs the action selected in the enum
+
+        :param bpy.types.Object obj: Object to be affected by operation
+        :return: None
+        """
+
+        if self.operation == 'SELECT':
+            obj.select_set(True)
+        elif self.operation == 'DESELECT':
+            obj.select_set(False)
+        elif self.operation == 'HIDE':
+            obj.hide_set(True)
+        elif self.operation == 'SHOW':
+            obj.hide_set(False)
+        elif self.operation == 'ENABLE_RENDER':
+            obj.hide_render = False
+        elif self.operation == 'DISABLE_RENDER':
+            obj.hide_render = True
+        elif self.operation == 'ENABLE_VIEWPORT':
+            obj.hide_viewport = False
+        elif self.operation == 'DISABLE_VIEWPORT':
+            obj.hide_viewport = True
 
 
 # TODO maybe add filter for collections

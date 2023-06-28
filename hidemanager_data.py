@@ -61,10 +61,11 @@ class HIDEMANAGER_PG_CustomCollection(PropertyGroup):
         ('CURVES', 'Hair Curves', 'Hair Curves', 'CURVE_DATA', 10),
         ('POINTCLOUD', 'Point Cloud', 'Point Cloud', 'POINTCLOUD_DATA', 11),
         ('VOLUME', 'Volume', 'Volume', 'VOLUME_DATA', 12),
-        ('GPENCIL', 'Grease Pencil', 'Grease Pencil', 'GREASEPENCIL', 13),
-        ('LATTICE', 'Lattice', 'Lattice', 'LATTICE_DATA', 14),
-        ('LIGHT_PROBE', 'Light Probe', 'Light Probe', 'OUTLINER_DATA_LIGHTPROBE', 15),
-        ('SPEAKER', 'Speaker', 'Speaker', 'SPEAKER', 16),
+        ('GPENCIL', 'Grease Pencil (legacy)', 'Grease Pencil (legacy)', 'GREASEPENCIL', 13),
+        ('GREASEPENCIL', 'Grease Pencil', 'Grease Pencil', 'GREASEPENCIL', 14),
+        ('LATTICE', 'Lattice', 'Lattice', 'LATTICE_DATA', 15),
+        ('LIGHT_PROBE', 'Light Probe', 'Light Probe', 'OUTLINER_DATA_LIGHTPROBE', 16),
+        ('SPEAKER', 'Speaker', 'Speaker', 'SPEAKER', 17),
     ])
 
     mod_items = []
