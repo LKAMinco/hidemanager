@@ -2,7 +2,7 @@ import logging
 
 import bpy
 from bpy.props import EnumProperty, StringProperty, BoolProperty, PointerProperty
-from bpy.types import PropertyGroup, Modifier, GpencilModifier
+from bpy.types import PropertyGroup, Modifier, GpencilModifier, Constraint
 
 
 # TODO implement not implemented filters
@@ -116,3 +116,22 @@ class HIDEMANAGER_PG_CustomCollection(PropertyGroup):
     group: StringProperty(default='', name='Group filters',
                           description='To make a group, fill this line with numbers (ids of filters from Hide Manager Filters) separated with comma or use range first - id-last id. Example: 1,3-5,7,8-10,12'
                                       '\nGroup filters uses both active and inactive filters from Hide Manager Filters')
+
+    constraint_items = []
+    idx = 0
+    for con in Constraint.bl_rna.properties['type'].enum_items:
+        if len(constraint_items) == 0:
+            constraint_items.append(('', 'Motion Tracking', '', '', 0))
+        elif len(constraint_items) == 4:
+            constraint_items.append(('', 'Transform', '', '', 0))
+            idx = -1
+        elif len(constraint_items) == 16:
+            constraint_items.append(('', 'Tracking', '', '', 0))
+            idx = -2
+        elif len(constraint_items) == 24:
+            constraint_items.append(('', 'Relationship', '', '', 0))
+            idx = -3
+        constraint_items.append((con.identifier, con.name, con.description, con.icon, len(constraint_items) + 1))
+
+    constraint_type: EnumProperty(default='COPY_LOCATION', name='Constraint Type', description='Type of constraint',
+                                  items=constraint_items)

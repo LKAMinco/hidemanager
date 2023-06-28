@@ -32,6 +32,9 @@ class HIDEMANAGER_UL_Items(UIList):
         elif item.line_type == 'MODIFIER':
             split.prop(item, 'modifier_type', text='', toggle=False, slider=True)
 
+        elif item.line_type == 'CONSTRAINT':
+            split.prop(item, 'constraint_type', text='', toggle=False, slider=True)
+
     def invoke(self, context, event):
         pass
 

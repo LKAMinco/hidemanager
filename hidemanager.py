@@ -1,8 +1,8 @@
 import logging
 
 import bpy
-from bpy.props import EnumProperty, StringProperty, BoolProperty, PointerProperty
-from bpy.types import PropertyGroup, Operator
+from bpy.props import EnumProperty, BoolProperty
+from bpy.types import Operator
 
 
 class HIDEMANAGER_OT_Actions(Operator):
@@ -160,6 +160,7 @@ class HIDEMANAGER_OT_State(Operator):
 # TODO maybe add filter for vertex groups
 # TODO maybe add filter for shape keys
 # TODO maybe add filter for constraints
+# TODO maybe add filter for greasepencil layers
 # TODO add hide for render
 # TODO add method to operations
 # TODO rework to use inheritance of class with operations
@@ -222,10 +223,10 @@ class HIDEMANAGER_OT_Selected(Operator):
 
         else:
             has_material = ['MESH', 'CURVE', 'SURFACE', 'META', 'FONT', 'VOLUME', 'GPENCIL', 'GREASEPENCIL']
-            has_modifier = ['MESH', 'CURVE', 'SURFACE', 'META', 'FONT', 'GPENCIL', 'GREASEPENCIL']
-            has_vertex_group = ['MESH', 'SURFACE', 'META', 'FONT', 'GPENCIL', 'GREASEPENCIL']
-            has_shape_key = ['MESH', 'CURVE', 'SURFACE', 'META', 'FONT', 'GPENCIL', 'GREASEPENCIL']
-            has_constraint = ['MESH', 'CURVE', 'SURFACE', 'META', 'FONT', 'GPENCIL', 'GREASEPENCIL']
+            has_modifier = ['MESH', 'CURVE', 'SURFACE', 'META', 'FONT', 'VOLUME', 'GPENCIL', 'GREASEPENCIL', 'LATTICE']
+            has_vertex_group = ['MESH', 'LATTICE']
+            has_shape_key = ['MESH', 'CURVE', 'SURFACE', 'LATTICE']
+
             if item.line_type == 'MODIFIER':
                 logging.log(logging.WARNING, str(item.modifier_type))
                 logging.log(logging.WARNING, item.mod_items)
