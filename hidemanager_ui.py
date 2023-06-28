@@ -16,7 +16,7 @@ class HIDEMANAGER_UL_Items(UIList):
         if item.line_type == 'CONTAINS':
             split.prop(item, 'contains', text='', toggle=False, slider=True)
         elif item.line_type == 'IGNORE':
-            split.prop(item, 'contains_ignore', text='', toggle=False, slider=True)
+            split.prop(item, 'contains', text='', toggle=False, slider=True)
         elif item.line_type == 'TYPE':
             split.prop(item, 'object_type', text='', toggle=False, slider=True)
         elif item.line_type == 'TYPE_IGNORE':
@@ -24,15 +24,34 @@ class HIDEMANAGER_UL_Items(UIList):
         elif item.line_type == 'MATERIAL':
             split.prop(item, 'material', text='', toggle=False, slider=True, icon='MATERIAL')
         elif item.line_type == 'MATERIAL_CONTAINS':
-            split.prop(item, 'material_contains', text='', toggle=False, slider=True)
+            split.prop(item, 'contains', text='', toggle=False, slider=True, icon='MATERIAL')
         elif item.line_type == 'MATERIAL_IGNORE':
-            split.prop(item, 'material_ignore', text='', toggle=False, slider=True, icon='MATERIAL')
+            split.prop(item, 'material', text='', toggle=False, slider=True, icon='MATERIAL')
         elif item.line_type == 'HIERARCHY':
             split.prop(item, 'object', text='', toggle=False, slider=True)
+        elif item.line_type == 'HIERARCHY_IGNORE':
+            split.prop(item, 'object', text='', toggle=False, slider=True)
+        elif item.line_type == 'COLLECTION':
+            split.prop(item, 'collection', text='', toggle=False, slider=True, icon='OUTLINER_COLLECTION')
+        elif item.line_type == 'COLLECTION_IGNORE':
+            split.prop(item, 'collection', text='', toggle=False, slider=True, icon='OUTLINER_COLLECTION')
         elif item.line_type == 'MODIFIER':
             split.prop(item, 'modifier_type', text='', toggle=False, slider=True)
-
+        elif item.line_type == 'MODIFIER_CONTAINS':
+            split.prop(item, 'contains', text='', toggle=False, slider=True)
+        elif item.line_type == 'MODIFIER_IGNORE':
+            split.prop(item, 'modifier_type', text='', toggle=False, slider=True)
+        elif item.line_type == 'VERTEX_GROUP_CONTAINS':
+            split.prop(item, 'contains', text='', toggle=False, slider=True)
+        elif item.line_type == 'VERTEX_GROUP_IGNORE':
+            split.prop(item, 'contains', text='', toggle=False, slider=True)
+        elif item.line_type == 'SHAPE_KEY_CONTAINS':
+            split.prop(item, 'contains', text='', toggle=False, slider=True)
+        elif item.line_type == 'SHAPE_KEY_IGNORE':
+            split.prop(item, 'contains', text='', toggle=False, slider=True)
         elif item.line_type == 'CONSTRAINT':
+            split.prop(item, 'constraint_type', text='', toggle=False, slider=True)
+        elif item.line_type == 'CONSTRAINT_IGNORE':
             split.prop(item, 'constraint_type', text='', toggle=False, slider=True)
 
     def invoke(self, context, event):
@@ -46,6 +65,9 @@ class HIDEMANAGER_UL_GroupItems(UIList):
         split = split.split(factor=0.05)
         split.enabled = item.line_enable
         split.label(text=str(index + 1) + '.')
+        split = split.split(factor=0.25)
+        split.prop(item, 'group_name', text='', toggle=False, slider=True, emboss=False)
+
         split.prop(item, 'group', text='', toggle=False, slider=True)
 
     def invoke(self, context, event):

@@ -34,13 +34,16 @@ class HIDEMANAGER_PG_CustomCollection(PropertyGroup):
         ('MODIFIER_IGNORE', 'Modifier Ignore', 'Filter will ignore all objects which contains selected modifier',
          'MODIFIER_DATA', 14),
         ('', 'Object Data Filters', '', '', 0),
-        ('VERTEX_GROUP', 'Vertex Group', 'Filter will be applied to all objects which contains selected vertex group',
+        ('VERTEX_GROUP_CONTAINS', 'Vertex Group Contains',
+         'Filter will be applied to all objects with vertex group which contains filled string',
          'GROUP_VERTEX', 15),
         ('VERTEX_GROUP_IGNORE', 'Vertex Group Ignore',
-         'Filter will ignore all objects which contains selected vertex group', 'GROUP_VERTEX', 16),
-        ('SHAPE_KEY', 'Shape Key', 'Filter will be applied to all objects which contains selected shape key',
+         'Filter will ignore all objects with vertex group which contains filled string', 'GROUP_VERTEX', 16),
+        ('SHAPE_KEY_CONTAINS', 'Shape Key',
+         'Filter will be applied to all objects with shape key which contains filled string',
          'SHAPEKEY_DATA', 17),
-        ('SHAPE_KEY_IGNORE', 'Shape Key Ignore', 'Filter will ignore all objects which contains selected shape key',
+        ('SHAPE_KEY_IGNORE', 'Shape Key Ignore',
+         'Filter will ignore all objects with shape key which contains filled string',
          'SHAPEKEY_DATA', 18),
         ('CONSTRAINT', 'Constraint', 'Filter will be applied to all objects which contains selected constraint',
          'CONSTRAINT', 19),
@@ -90,32 +93,33 @@ class HIDEMANAGER_PG_CustomCollection(PropertyGroup):
             idx = -4
         mod_items.append((mod.identifier, mod.name, mod.description, mod.icon, len(mod_items) + idx))
 
-    modifier_type: EnumProperty(default='MIRROR', name='Modifier', description='Type of modifier', items=mod_items)
+    modifier_type: EnumProperty(default='MIRROR', name='Modifier', items=mod_items)
 
-    contains: StringProperty(default='', name='String in name',
-                             description='Filter will be applied to all objects with this string in name')
+    contains: StringProperty(default='', name='String in name', )
 
-    contains_ignore: StringProperty(default='', name='String in name',
-                                    description='Filter will ignore all objects with this string in name')
+    # contains_ignore: StringProperty(default='', name='String in name',
+    #                                 description='Filter will ignore all objects with this string in name')
 
     line_enable: BoolProperty(default=True, name='Filter active state',
                               description='Enable / Disable filter. In case of disable, filter will be skipped')
 
-    material: PointerProperty(type=bpy.types.Material, name='Material',
-                              description='Filter will be applied to all objects with this material')
+    material: PointerProperty(type=bpy.types.Material, name='Material', )
 
-    material_ignore: PointerProperty(type=bpy.types.Material, name='Material',
-                                     description='Filter will ignore all objects with this material')
+    # material_ignore: PointerProperty(type=bpy.types.Material, name='Material',
+    #                                  description='Filter will ignore all objects with this material')
+    #
+    # material_contains: StringProperty(default='', name='String in material name',
+    #                                   description='Filter will be applied to all objects with this string in material name')
 
-    material_contains: StringProperty(default='', name='String in material name',
-                                      description='Filter will be applied to all objects with this string in material name')
+    object: PointerProperty(type=bpy.types.Object, name='Hierarchy of objects')
 
-    object: PointerProperty(type=bpy.types.Object, name='Hierarchy of objects',
-                            description='Filter will be applied to object and all its children of this object')
+    collection: PointerProperty(type=bpy.types.Collection, name='Collection')
 
     group: StringProperty(default='', name='Group filters',
                           description='To make a group, fill this line with numbers (ids of filters from Hide Manager Filters) separated with comma or use range first - id-last id. Example: 1,3-5,7,8-10,12'
                                       '\nGroup filters uses both active and inactive filters from Hide Manager Filters')
+
+    group_name: StringProperty(default='Name', name='Group name', description='Name of group')
 
     constraint_items = []
     idx = 0

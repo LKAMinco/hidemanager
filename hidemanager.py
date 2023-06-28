@@ -227,15 +227,21 @@ class HIDEMANAGER_OT_Selected(Operator):
             has_vertex_group = ['MESH', 'LATTICE']
             has_shape_key = ['MESH', 'CURVE', 'SURFACE', 'LATTICE']
 
-            if item.line_type == 'MODIFIER':
-                logging.log(logging.WARNING, str(item.modifier_type))
-                logging.log(logging.WARNING, item.mod_items)
+            # if item.line_type == 'MODIFIER':
+            #     logging.log(logging.WARNING, str(item.modifier_type))
+            #     logging.log(logging.WARNING, item.mod_items)
 
             for obj in scene.view_layers[0].objects:
                 if item.line_type == 'CONTAINS':
                     if item.contains == '':
                         break
                     if item.contains in obj.name:
+                        self.objectAction(obj)
+
+                elif item.line_type == "IGNORE":
+                    if item.contains == '':
+                        break
+                    if item.contains not in obj.name:
                         self.objectAction(obj)
 
                 elif item.line_type == 'TYPE':
@@ -246,53 +252,72 @@ class HIDEMANAGER_OT_Selected(Operator):
                     if obj.type != item.object_type:
                         self.objectAction(obj)
 
-                elif item.line_type == "IGNORE":
-                    if item.contains_ignore == '':
+                elif item.line_type == 'HIERARCHY':
+                    if item.object is None:
                         break
-                    if item.contains_ignore not in obj.name:
+                    if obj is item.object:
+                        self.objectAction(obj)
+
+                elif item.line_type == 'HIERARCHY_IGNORE':
+                    if item.object is None:
+                        break
+                    if obj is not item.object:
+                        self.objectAction(obj)
+
+                elif item.line_type == 'COLLECTION':
+                    if item.collection is None:
+                        break
+                    if item.collection in obj.users_collection:
+                        self.objectAction(obj)
+
+                elif item.line_type == 'COLLECTION_IGNORE':
+                    if item.collection is None:
+                        break
+                    if item.collection not in obj.users_collection:
                         self.objectAction(obj)
 
                 elif item.line_type == 'MATERIAL':
-                    if obj.type == 'MESH' or obj.type == 'CURVE' or obj.type == 'SURFACE' or obj.type == "META" or obj.type == "FONT":
+                    if obj.type in has_material:
                         if item.material is None:
                             break
                         if item.material.name in obj.data.materials:
                             self.objectAction(obj)
 
                 elif item.line_type == 'MATERIAL_CONTAINS':
-                    if obj.type == 'MESH' or obj.type == 'CURVE' or obj.type == 'SURFACE' or obj.type == "META" or obj.type == "FONT":
-                        if item.material is None:
+                    if obj.type in has_material:
+                        if item.contains == '':
                             break
                         for mat in obj.data.materials:
-                            if item.material_contains in mat.name:
-                                if self.select:
-                                    obj.select_set(True)
-                                else:
-                                    obj.hide_set(self.hide)
+                            if item.contains in mat.name:
+                                self.objectAction(obj)
 
                 elif item.line_type == 'MATERIAL_IGNORE':
-                    if obj.type == 'MESH' or obj.type == 'CURVE' or obj.type == 'SURFACE' or obj.type == "META" or obj.type == "FONT":
-                        if item.material_ignore is None:
+                    if obj.type in has_material:
+                        if item.material is None:
                             break
-                        if item.material_ignore.name not in obj.data.materials:
-                            if self.select:
-                                obj.select_set(True)
-                            else:
-                                obj.hide_set(self.hide)
+                        if item.material.name not in obj.data.materials:
+                            self.objectAction(obj)
 
-                elif item.line_type == 'HIERARCHY':
-                    if item.object is None:
+                elif item.line_type == 'MODIFIER':
+                    if obj.type in has_modifier:
+                        for mod in obj.modifiers:
+                            if mod.type == item.modifier_type:
+                                self.objectAction(obj)
+
+                elif item.line_type == 'MODIFIER_CONTAINS':
+                    if item.contains == '':
                         break
-                    if obj is item.object:
-                        if self.select:
-                            obj.select_set(True)
-                        else:
-                            obj.hide_set(self.hide)
-                        for child in item.object.children_recursive:
-                            if self.select:
-                                child.select_set(True)
-                            else:
-                                child.hide_set(self.hide)
+                    if obj.type in has_modifier:
+                        for mod in obj.modifiers:
+                            if item.contains in mod.name:
+                                self.objectAction(obj)
+
+                elif item.line_type == 'MODIFIER_IGNORE':
+                    if obj.type in has_modifier:
+                        mod_types = [mod.type for mod in obj.modifiers]
+                        if item.modifier_type not in mod_types:
+                            self.objectAction(obj)
+
 
         self.select = False
         return {'FINISHED'}
