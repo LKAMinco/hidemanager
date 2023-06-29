@@ -155,30 +155,13 @@ class HIDEMANAGER_OT_State(Operator):
         return {'FINISHED'}
 
 
-# TODO maybe add filter for collections
-# TODO maybe add filter for modifiers
-# TODO maybe add filter for vertex groups
-# TODO maybe add filter for shape keys
-# TODO maybe add filter for constraints
 # TODO maybe add filter for greasepencil layers
-# TODO add hide for render
-# TODO add method to operations
 # TODO rework to use inheritance of class with operations
-# TODO check for default values for groups in ui
-# TODO rework hide/unhide to enum
 class HIDEMANAGER_OT_Selected(Operator):
     bl_idname = 'hidemanager.selected'
     bl_label = ''
     bl_description = ''
     bl_options = {'REGISTER'}
-
-    hide: BoolProperty(default=False)
-
-    render: BoolProperty(default=False)
-
-    viewport: BoolProperty(default=False)
-
-    select: BoolProperty(default=False)
 
     operation: EnumProperty(default='SELECT', items=[
         ('SELECT', 'Select', 'Select objects by selected filter'),
@@ -227,11 +210,9 @@ class HIDEMANAGER_OT_Selected(Operator):
             has_vertex_group = ['MESH', 'LATTICE']
             has_shape_key = ['MESH', 'CURVE', 'SURFACE', 'LATTICE']
 
-            # if item.line_type == 'MODIFIER':
-            #     logging.log(logging.WARNING, str(item.modifier_type))
-            #     logging.log(logging.WARNING, item.mod_items)
-
             for obj in scene.view_layers[0].objects:
+                logging.log(logging.WARNING, obj.name)
+                skip = False
                 if item.line_type == 'CONTAINS':
                     if item.contains == '':
                         break
@@ -318,6 +299,55 @@ class HIDEMANAGER_OT_Selected(Operator):
                         if item.modifier_type not in mod_types:
                             self.objectAction(obj)
 
+                elif item.line_type == 'VERTEX_GROUP_CONTAINS':
+                    if item.contains == '':
+                        break
+                    if obj.type in has_vertex_group:
+                        for vg in obj.vertex_groups:
+                            if item.contains in vg.name:
+                                self.objectAction(obj)
+
+                elif item.line_type == 'VERTEX_GROUP_IGNORE':
+                    if item.contains == '':
+                        break
+                    if obj.type in has_vertex_group:
+                        for vg in obj.vertex_groups:
+                            if item.contains in vg.name:
+                                skip = True
+                        if not skip:
+                            self.objectAction(obj)
+
+                elif item.line_type == 'SHAPE_KEY_CONTAINS':
+                    if item.contains == '':
+                        break
+                    if obj.type in has_shape_key:
+                        if obj.data.shape_keys is not None:
+                            for sk in obj.data.shape_keys.key_blocks:
+                                if item.contains in sk.name:
+                                    self.objectAction(obj)
+
+                elif item.line_type == 'SHAPE_KEY_IGNORE':
+                    if item.contains == '':
+                        break
+                    if obj.type in has_shape_key:
+                        if obj.data.shape_keys is not None:
+                            for sk in obj.data.shape_keys.key_blocks:
+                                if item.contains in sk.name:
+                                    skip = True
+                            if not skip:
+                                self.objectAction(obj)
+                        else:
+                            self.objectAction(obj)
+
+                elif item.line_type == 'CONSTRAINT':
+                    for con in obj.constraints:
+                        if con.type == item.constraint_type:
+                            self.objectAction(obj)
+
+                elif item.line_type == 'CONSTRAINT_IGNORE':
+                    con_types = [con.type for con in obj.constraints]
+                    if item.constraint_type not in con_types:
+                        self.objectAction(obj)
 
         self.select = False
         return {'FINISHED'}
@@ -364,13 +394,23 @@ class HIDEMANAGER_OT_All(Operator):
     bl_options = {'REGISTER'}
 
     contains = []
-    hierarchy = []
     ignore = []
+    types = []
+    types_ignore = []
+    hierarchy = []
+    hierarchy_ignore = []
     material = []
     material_contains = []
     material_ignore = []
-    types = []
-    types_ignore = []
+    modifier = []
+    modifier_contains = []
+    modifier_ignore = []
+    vertex_group_contains = []
+    vertex_group_ignore = []
+    shape_key_contains = []
+    shape_key_ignore = []
+    constraint = []
+    constraint_ignore = []
     groups = []
 
     hide: BoolProperty(default=False)
@@ -380,6 +420,17 @@ class HIDEMANAGER_OT_All(Operator):
     select: BoolProperty(default=False)
 
     group: BoolProperty(default=False)
+
+    operation: EnumProperty(default='SELECT', items=[
+        ('SELECT', 'Select', 'Select objects by selected filter'),
+        ('DESELECT', 'Deselect', 'Deselect objects by selected filter'),
+        ('HIDE', 'Hide', 'Hide objects by selected filter'),
+        ('SHOW', 'Show', 'Show objects by selected filter'),
+        ('ENABLE_RENDER', 'Enable Render', 'Enable objects in render by selected filter'),
+        ('DISABLE_RENDER', 'Disable Render', 'Disable objects in render by selected filter'),
+        ('ENABLE_VIEWPORT', 'Enable Viewport', 'Enable objects in viewport by selected filter'),
+        ('DISABLE_VIEWPORT', 'Disable Viewport', 'Disable objects in viewport by selected filter'),
+    ])
 
     @classmethod
     def description(cls, context, properties):
