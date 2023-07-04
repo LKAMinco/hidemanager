@@ -21,12 +21,6 @@ class HIDEMANAGER_UL_Items(UIList):
             split.prop(item, 'object_type', text='', toggle=False, slider=True)
         elif item.line_type == 'TYPE_IGNORE':
             split.prop(item, 'object_type', text='', toggle=False, slider=True)
-        elif item.line_type == 'MATERIAL':
-            split.prop(item, 'material', text='', toggle=False, slider=True, icon='MATERIAL')
-        elif item.line_type == 'MATERIAL_CONTAINS':
-            split.prop(item, 'contains', text='', toggle=False, slider=True, icon='MATERIAL')
-        elif item.line_type == 'MATERIAL_IGNORE':
-            split.prop(item, 'material', text='', toggle=False, slider=True, icon='MATERIAL')
         elif item.line_type == 'HIERARCHY':
             split.prop(item, 'object', text='', toggle=False, slider=True)
         elif item.line_type == 'HIERARCHY_IGNORE':
@@ -35,6 +29,12 @@ class HIDEMANAGER_UL_Items(UIList):
             split.prop(item, 'collection', text='', toggle=False, slider=True, icon='OUTLINER_COLLECTION')
         elif item.line_type == 'COLLECTION_IGNORE':
             split.prop(item, 'collection', text='', toggle=False, slider=True, icon='OUTLINER_COLLECTION')
+        elif item.line_type == 'MATERIAL':
+            split.prop(item, 'material', text='', toggle=False, slider=True, icon='MATERIAL')
+        elif item.line_type == 'MATERIAL_CONTAINS':
+            split.prop(item, 'contains', text='', toggle=False, slider=True, icon='MATERIAL')
+        elif item.line_type == 'MATERIAL_IGNORE':
+            split.prop(item, 'material', text='', toggle=False, slider=True, icon='MATERIAL')
         elif item.line_type == 'MODIFIER':
             split.prop(item, 'modifier_type', text='', toggle=False, slider=True)
         elif item.line_type == 'MODIFIER_CONTAINS':
@@ -130,12 +130,26 @@ class HIDEMANAGER_PT_List(Panel):
                          icon='RESTRICT_VIEW_ON').operation = 'DISABLE_VIEWPORT'
             row.operator(hdmg_op, text='Enable In Viewports',
                          icon='RESTRICT_VIEW_OFF').operation = 'ENABLE_VIEWPORT'
+
+            # TODO maybe groups = False will be needed
         else:
-            hdmng_op = 'hidemanager.all'
-            row.operator(hdmng_op, text='Select Objects', icon='RESTRICT_SELECT_OFF').select = True
+            hdmg_op = 'hidemanager.all'
+            row.operator(hdmg_op, text='Select Objects', icon='RESTRICT_SELECT_OFF').operation = 'SELECT'
+            row.operator(hdmg_op, text='Deselect Objects',
+                         icon='RESTRICT_SELECT_ON').operation = 'DESELECT'
             row = col.row(align=True)
-            row.operator(hdmng_op, text='Hide', icon='HIDE_OFF').hide = True
-            row.operator(hdmng_op, text='Unhide', icon='HIDE_ON').hide = False
+            row.operator(hdmg_op, text='Hide Objects', icon='HIDE_ON').operation = 'HIDE'
+            row.operator(hdmg_op, text='Show Objects', icon='HIDE_OFF').operation = 'SHOW'
+            row = col.row(align=True)
+            row.operator(hdmg_op, text='Disable In Renders',
+                         icon='RESTRICT_RENDER_ON').operation = 'DISABLE_RENDER'
+            row.operator(hdmg_op, text='Enable In Renders',
+                         icon='RESTRICT_RENDER_OFF').operation = 'ENABLE_RENDER'
+            row = col.row(align=True)
+            row.operator(hdmg_op, text='Disable In Viewports',
+                         icon='RESTRICT_VIEW_ON').operation = 'DISABLE_VIEWPORT'
+            row.operator(hdmg_op, text='Enable In Viewports',
+                         icon='RESTRICT_VIEW_OFF').operation = 'ENABLE_VIEWPORT'
 
 
 class HIDEMANAGER_PT_GroupList(Panel):
@@ -184,17 +198,17 @@ class HIDEMANAGER_PT_GroupList(Panel):
         row.label(text='Use only active group')
         row.prop(scene, 'hidemanager_group_only_active', text=str(scene.hidemanager_group_only_active), toggle=True,
                  slider=True)
-        row = col.row()
-
-        op = row.operator('hidemanager.all', text='Select Objects', icon='RESTRICT_SELECT_OFF')
-        op.select = True
-        op.group = True
-        row = col.row(align=True)
-
-        op = row.operator('hidemanager.all', text='Hide', icon='HIDE_OFF')
-        op.hide = True
-        op.group = True
-
-        op = row.operator('hidemanager.all', text='Unhide', icon='HIDE_ON')
-        op.hide = False
-        op.group = True
+        # row = col.row()
+        #
+        # op = row.operator('hidemanager.all', text='Select Objects', icon='RESTRICT_SELECT_OFF')
+        # op.select = True
+        # op.group = True
+        # row = col.row(align=True)
+        #
+        # op = row.operator('hidemanager.all', text='Hide', icon='HIDE_OFF')
+        # op.hide = True
+        # op.group = True
+        #
+        # op = row.operator('hidemanager.all', text='Unhide', icon='HIDE_ON')
+        # op.hide = False
+        # op.group = True

@@ -106,8 +106,6 @@ class HIDEMANAGER_OT_GroupActions(Operator):
                 info = 'Item "%s" moved to position %d' % (item.name, scene.hidemanager_group_index + 1)
         if self.action == 'ADD':
             item = scene.hidemanager_group.add()
-            item.line_type = 'CONTAINS'
-            item.object_type = 'MESH'
         return {'FINISHED'}
 
 
@@ -209,10 +207,14 @@ class HIDEMANAGER_OT_Selected(Operator):
             has_modifier = ['MESH', 'CURVE', 'SURFACE', 'META', 'FONT', 'VOLUME', 'GPENCIL', 'GREASEPENCIL', 'LATTICE']
             has_vertex_group = ['MESH', 'LATTICE']
             has_shape_key = ['MESH', 'CURVE', 'SURFACE', 'LATTICE']
+            already_checked = []
 
             for obj in scene.view_layers[0].objects:
-                logging.log(logging.WARNING, obj.name)
                 skip = False
+
+                if obj in already_checked:
+                    continue
+
                 if item.line_type == 'CONTAINS':
                     if item.contains == '':
                         break
@@ -238,12 +240,19 @@ class HIDEMANAGER_OT_Selected(Operator):
                         break
                     if obj is item.object:
                         self.objectAction(obj)
+                        already_checked.append(obj)
+                        for child in obj.children_recursive:
+                            self.objectAction(child)
+                            already_checked.append(child)
 
                 elif item.line_type == 'HIERARCHY_IGNORE':
                     if item.object is None:
                         break
                     if obj is not item.object:
                         self.objectAction(obj)
+                    else:
+                        for child in obj.children_recursive:
+                            already_checked.append(child)
 
                 elif item.line_type == 'COLLECTION':
                     if item.collection is None:
@@ -349,7 +358,6 @@ class HIDEMANAGER_OT_Selected(Operator):
                     if item.constraint_type not in con_types:
                         self.objectAction(obj)
 
-        self.select = False
         return {'FINISHED'}
 
     def objectAction(self, obj: bpy.types.Object) -> None:
@@ -399,6 +407,8 @@ class HIDEMANAGER_OT_All(Operator):
     types_ignore = []
     hierarchy = []
     hierarchy_ignore = []
+    collection = []
+    collection_ignore = []
     material = []
     material_contains = []
     material_ignore = []
@@ -412,12 +422,6 @@ class HIDEMANAGER_OT_All(Operator):
     constraint = []
     constraint_ignore = []
     groups = []
-
-    hide: BoolProperty(default=False)
-
-    render: BoolProperty(default=False)
-
-    select: BoolProperty(default=False)
 
     group: BoolProperty(default=False)
 
@@ -434,64 +438,147 @@ class HIDEMANAGER_OT_All(Operator):
 
     @classmethod
     def description(cls, context, properties):
-        if not properties.group:
-            hdmng_context = 'objects by all active filters'
-
-            if properties.select:
-                return 'Select %s' % hdmng_context
-            else:
-                if properties.hide:
-                    return 'Hide %s' % hdmng_context
-                else:
-                    return 'Show %s' % hdmng_context
-        else:
+        if properties.group:
             if context.scene.hidemanager_group_only_active:
-                hdmng_context = 'objects by active group'
+                hdmg_context = 'active group'
             else:
-                hdmng_context = 'objects by all active groups'
-            if properties.select:
-                return 'Select %s' % hdmng_context
-            else:
-                if properties.hide:
-                    return 'Hide %s' % hdmng_context
-                else:
-                    return 'Show %s' % hdmng_context
+                hdmg_context = 'all groups'
+        else:
+            hdmg_context = 'all enabled filters'
+
+        if properties.operation == 'SELECT':
+            return 'Select objects by %s' % hdmg_context
+        elif properties.operation == 'DESELECT':
+            return 'Deselect objects by %s' % hdmg_context
+        elif properties.operation == 'HIDE':
+            return 'Hide objects by %s' % hdmg_context
+        elif properties.operation == 'SHOW':
+            return 'Show objects by %s' % hdmg_context
+        elif properties.operation == 'ENABLE_RENDER':
+            return 'Enable objects in render by %s' % hdmg_context
+        elif properties.operation == 'DISABLE_RENDER':
+            return 'Disable objects in render by %s' % hdmg_context
+        elif properties.operation == 'ENABLE_VIEWPORT':
+            return 'Enable objects in viewport by %s' % hdmg_context
+        elif properties.operation == 'DISABLE_VIEWPORT':
+            return 'Disable objects in viewport by %s' % hdmg_context
 
     def execute(self, context):
         scene = context.scene
         self.clear()
         self.getConfig(context, self.group)
-        skip_objects = []
+        has_material = ['MESH', 'CURVE', 'SURFACE', 'META', 'FONT', 'VOLUME', 'GPENCIL', 'GREASEPENCIL']
+        has_modifier = ['MESH', 'CURVE', 'SURFACE', 'META', 'FONT', 'VOLUME', 'GPENCIL', 'GREASEPENCIL', 'LATTICE']
+        has_vertex_group = ['MESH', 'LATTICE']
+        has_shape_key = ['MESH', 'CURVE', 'SURFACE', 'LATTICE']
+        already_checked = []
 
-        # logging.log(logging.WARNING, 'HIDEMANAGER groups: %s' % self.groups)
-        # logging.log(logging.WARNING, 'HIDEMANAGER types: %s' % self.types)
-        # logging.log(logging.WARNING, 'HIDEMANAGER types_ignore: %s' % self.types_ignore)
-        # logging.log(logging.WARNING, 'HIDEMANAGER contains: %s' % self.contains)
-        # logging.log(logging.WARNING, 'HIDEMANAGER ignore: %s' % self.ignore)
-        # logging.log(logging.WARNING, 'HIDEMANAGER material: %s' % self.material)
-        # logging.log(logging.WARNING, 'HIDEMANAGER material_contains: %s' % self.material_contains)
-        # logging.log(logging.WARNING, 'HIDEMANAGER material_ignore: %s' % self.material_ignore)
-        # logging.log(logging.WARNING, 'HIDEMANAGER hierarchy: %s' % self.hierarchy)
+        if len(scene.hidemanager) == 0:
+            return {'FINISHED'}
+
+        ignore_count = len(self.ignore) + len(self.types_ignore) + len(self.hierarchy_ignore) + len(
+            self.collection_ignore) + len(self.material_ignore) + len(self.modifier_ignore) + len(
+            self.vertex_group_ignore) + len(self.shape_key_ignore) + len(self.constraint_ignore)
+
+        if ignore_count == 0:
+            # 2 loops needed to check for ignored objects first
+            for obj in scene.view_layers[0].objects:
+                skip = False
+                if obj in already_checked:
+                    continue
+
+                if obj in self.hierarchy_ignore:
+                    already_checked.append(obj)
+                    for child in obj.children_recursive:
+                        already_checked.append(child)
+                    continue
+
+                if obj.type in self.types_ignore:
+                    already_checked.append(obj)
+                    continue
+
+                if obj.users_collection in self.collection_ignore:
+                    already_checked.append(obj)
+                    continue
+
+                for contain in self.ignore:
+                    if contain in obj.name:
+                        already_checked.append(obj)
+                        skip = True
+                        break
+                if skip:
+                    continue
+
+                if obj.type in has_modifier:
+                    for mod in obj.modifiers:
+                        if mod.type in self.modifier_ignore:
+                            already_checked.append(obj)
+                            skip = True
+                            break
+                    if skip:
+                        continue
+
+                if obj.type in has_material:
+                    for mat in self.material_ignore:
+                        if mat in obj.material_slots:
+                            already_checked.append(obj)
+                            skip = True
+                            break
+                    if skip:
+                        continue
+
+                for const in obj.constraints:
+                    if const.type in self.constraint_ignore:
+                        already_checked.append(obj)
+                        skip = True
+                        break
+                if skip:
+                    continue
+
+                if obj.type in has_vertex_group:
+                    for contain in self.vertex_group_ignore:
+                        for vg in obj.vertex_groups:
+                            if contain in vg.name:
+                                already_checked.append(obj)
+                                skip = True
+                                break
+                        if skip:
+                            break
+                    if skip:
+                        continue
+
+                if obj.type in has_shape_key:
+                    if obj.data.shape_keys is not None:
+                        for contain in self.shape_key_ignore:
+                            for sk in obj.data.shape_keys.key_blocks:
+                                if contain in sk.name:
+                                    already_checked.append(obj)
+                                    skip = True
+                                    break
+                            if skip:
+                                break
+                        if skip:
+                            continue
 
         for obj in scene.view_layers[0].objects:
             if len(scene.hidemanager) == 0:
                 break
 
-            if obj in skip_objects:
+            if obj in already_checked:
                 continue
 
             if obj in self.hierarchy:
                 result = self.checkObject(obj)
                 if result:
-                    self.objectAction(context, obj)
+                    self.objectAction(obj)
 
                 for child in obj.children_recursive:
                     result = self.checkObject(child, True)
                     if not result:
                         continue
                     else:
-                        self.objectAction(context, child)
-                        skip_objects.append(child)
+                        self.objectAction(child)
+                        already_checked.append(child)
                         continue
                 continue
 
@@ -499,11 +586,13 @@ class HIDEMANAGER_OT_All(Operator):
             if not result:
                 continue
             else:
-                self.objectAction(context, obj)
+                self.objectAction(obj)
                 continue
 
-        self.select = False
         return {'FINISHED'}
+
+    def getIgnoredObjects(self):
+        pass
 
     def checkObject(self, obj, hierarchy=False):
         if obj.type in self.types_ignore:
@@ -541,27 +630,43 @@ class HIDEMANAGER_OT_All(Operator):
 
         return False
 
-    def objectAction(self, context, obj):
-        if self.select:
+    def objectAction(self, obj: bpy.types.Object) -> None:
+        """Performs the action selected in the enum
+
+        :param bpy.types.Object obj: Object to be affected by operation
+        :return: None
+        """
+
+        if self.operation == 'SELECT':
             obj.select_set(True)
-        else:
-            if self.render:
-                obj.hide_render = self.render
-            elif self.viewport:
-                obj.hide_viewport = self.viewport
-            else:
-                obj.hide_set(self.hide)
+        elif self.operation == 'DESELECT':
+            obj.select_set(False)
+        elif self.operation == 'HIDE':
+            obj.hide_set(True)
+        elif self.operation == 'SHOW':
+            obj.hide_set(False)
+        elif self.operation == 'ENABLE_RENDER':
+            obj.hide_render = False
+        elif self.operation == 'DISABLE_RENDER':
+            obj.hide_render = True
+        elif self.operation == 'ENABLE_VIEWPORT':
+            obj.hide_viewport = False
+        elif self.operation == 'DISABLE_VIEWPORT':
+            obj.hide_viewport = True
 
     def getConfig(self, context, group=False):
         scene = context.scene
         if group:
             self.getGroups(context)
+
         idx = 0
         for item in scene.hidemanager:
+            # in case of group, skip filter when is not in group
             idx += 1
             if idx not in self.groups and group:
                 continue
 
+            # skip filter if is not enabled
             if not item.line_enable and not group:
                 continue
 
@@ -573,7 +678,7 @@ class HIDEMANAGER_OT_All(Operator):
             elif item.line_type == 'IGNORE':
                 if item.contains_ignore == '':
                     continue
-                self.ignore.append(item.contains_ignore)
+                self.ignore.append(item.contains)
 
             elif item.line_type == 'TYPE':
                 self.types.append(item.object_type)
@@ -581,35 +686,101 @@ class HIDEMANAGER_OT_All(Operator):
             elif item.line_type == 'TYPE_IGNORE':
                 self.types_ignore.append(item.object_type)
 
+            elif item.line_type == 'HIERARCHY':
+                if item.object is None:
+                    continue
+                self.hierarchy.append(item.object)
+
+            elif item.line_type == 'HIERARCHY_IGNORE':
+                if item.object is None:
+                    continue
+                self.hierarchy_ignore.append(item.object)
+
+            elif item.line_type == 'COLLECTION':
+                if item.collection is None:
+                    continue
+                self.collection.append(item.collection)
+
+            elif item.line_type == 'COLLECTION_IGNORE':
+                if item.collection is None:
+                    continue
+                self.collection_ignore.append(item.collection)
+
             elif item.line_type == 'MATERIAL':
                 if item.material is None:
                     continue
                 self.material.append(item.material.name)
 
             elif item.line_type == 'MATERIAL_CONTAINS':
-                if item.material_contains is None:
+                if item.contains is None:
                     continue
-                self.material_contains.append(item.material_contains)
+                self.contains.append(item.contains)
 
             elif item.line_type == 'MATERIAL_IGNORE':
-                if item.material_ignore is None:
+                if item.material is None:
                     continue
-                self.material_ignore.append(item.material_ignore.name)
+                self.material_ignore.append(item.material.name)
 
-            elif item.line_type == 'HIERARCHY':
-                if item.object is None:
+            elif item.line_type == 'MODIFIER':
+                self.modifier.append(item.modifier_type)
+
+            elif item.line_type == 'MODIFIER_CONTAINS':
+                if item.contains == '':
                     continue
-                self.hierarchy.append(item.object)
+                self.modifier_contains.append(item.contains)
+
+            elif item.line_type == 'MODIFIER_IGNORE':
+                self.modifier_ignore.append(item.modifier_type)
+
+            elif item.line_type == 'VERTEX_GROUP_CONTAINS':
+                if item.contains == '':
+                    continue
+                self.vertex_group_contains.append(item.contains)
+
+            elif item.line_type == 'VERTEX_GROUP_IGNORE':
+                if item.contains == '':
+                    continue
+                self.vertex_group_ignore.append(item.contains)
+
+            elif item.line_type == 'SHAPE_KEY_CONTAINS':
+                if item.contains == '':
+                    continue
+                self.shape_key_contains.append(item.contains)
+
+            elif item.line_type == 'SHAPE_KEY_IGNORE':
+                if item.contains == '':
+                    continue
+                self.shape_key_ignore.append(item.contains)
+
+            elif item.line_type == 'CONSTRAINT':
+                self.constraint.append(item.constraint_type)
+
+            elif item.line_type == 'CONSTRAINT_IGNORE':
+                self.constraint_ignore.append(item.constraint_type)
+
+            self.group = False
 
     def clear(self):
         self.contains.clear()
         self.ignore.clear()
         self.types.clear()
         self.types_ignore.clear()
+        self.hierarchy.clear()
+        self.hierarchy_ignore.clear()
+        self.collection.clear()
+        self.collection_ignore.clear()
         self.material.clear()
         self.material_contains.clear()
         self.material_ignore.clear()
-        self.hierarchy.clear()
+        self.modifier.clear()
+        self.modifier_contains.clear()
+        self.modifier_ignore.clear()
+        self.vertex_group_contains.clear()
+        self.vertex_group_ignore.clear()
+        self.shape_key_contains.clear()
+        self.shape_key_ignore.clear()
+        self.constraint.clear()
+        self.constraint_ignore.clear()
         self.groups.clear()
 
     def getGroups(self, context):
