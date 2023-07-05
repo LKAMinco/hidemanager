@@ -673,7 +673,7 @@ class HIDEMANAGER_OT_All(Operator):
                 self.contains.append(item.contains)
 
             elif item.line_type == 'IGNORE':
-                if item.contains_ignore == '':
+                if item.contains == '':
                     continue
                 self.ignore.append(item.contains)
 
