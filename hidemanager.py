@@ -569,7 +569,11 @@ class HIDEMANAGER_OT_All(Operator):
         has_vertex_group = ['MESH', 'LATTICE']
         has_shape_key = ['MESH', 'CURVE', 'SURFACE', 'LATTICE']
 
-        # vertex_group_contains, shape_key_contains, constraint
+        if obj in self.hierarchy:
+            for child in obj.children_recursive:
+                self.objectAction(child)
+                self.already_checked.append(child)
+            return True
 
         if obj.type in self.types:
             return True
@@ -582,14 +586,6 @@ class HIDEMANAGER_OT_All(Operator):
             for const in obj.constraints:
                 if const.type in self.constraint:
                     return True
-
-        if obj in self.hierarchy:
-            self.objectAction(obj)
-            self.already_checked.append(obj)
-            for child in obj.children_recursive:
-                self.objectAction(child)
-                self.already_checked.append(child)
-            return False
 
         if obj.users_collection in self.collection:
             return False
