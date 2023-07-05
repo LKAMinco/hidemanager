@@ -5,12 +5,12 @@ from bpy.types import PropertyGroup, UIList, Panel
 
 class HIDEMANAGER_UL_Items(UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
-        split = layout.split(factor=0.03)
+        split = layout.split(factor=0.03, align=True)
         split.prop(item, 'line_enable', text='', toggle=False, slider=True)
-        split = split.split(factor=0.05)
+        split = split.split(factor=0.05, align=True)
         split.enabled = item.line_enable
         split.label(text=str(index + 1) + '.')
-        split = split.split(factor=0.3)
+        split = split.split(factor=0.3, align=True)
         split.prop(item, 'line_type', text='', toggle=False, slider=True)
 
         if item.line_type == 'CONTAINS':
@@ -32,7 +32,7 @@ class HIDEMANAGER_UL_Items(UIList):
         elif item.line_type == 'MATERIAL':
             split.prop(item, 'material', text='', toggle=False, slider=True, icon='MATERIAL')
         elif item.line_type == 'MATERIAL_CONTAINS':
-            split.prop(item, 'contains', text='', toggle=False, slider=True, icon='MATERIAL')
+            split.prop(item, 'contains', text='', toggle=False, slider=True)
         elif item.line_type == 'MATERIAL_IGNORE':
             split.prop(item, 'material', text='', toggle=False, slider=True, icon='MATERIAL')
         elif item.line_type == 'MODIFIER':
@@ -60,12 +60,12 @@ class HIDEMANAGER_UL_Items(UIList):
 
 class HIDEMANAGER_UL_GroupItems(UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
-        split = layout.split(factor=0.03)
+        split = layout.split(factor=0.03, align=True)
         split.prop(item, 'line_enable', text='', toggle=False, slider=True)
-        split = split.split(factor=0.05)
+        split = split.split(factor=0.05, align=True)
         split.enabled = item.line_enable
         split.label(text=str(index + 1) + '.')
-        split = split.split(factor=0.25)
+        split = split.split(factor=0.25, align=True)
         split.prop(item, 'group_name', text='', toggle=False, slider=True, emboss=False)
 
         split.prop(item, 'group', text='', toggle=False, slider=True)
@@ -198,17 +198,41 @@ class HIDEMANAGER_PT_GroupList(Panel):
         row.label(text='Use only active group')
         row.prop(scene, 'hidemanager_group_only_active', text=str(scene.hidemanager_group_only_active), toggle=True,
                  slider=True)
-        # row = col.row()
-        #
-        # op = row.operator('hidemanager.all', text='Select Objects', icon='RESTRICT_SELECT_OFF')
-        # op.select = True
-        # op.group = True
-        # row = col.row(align=True)
-        #
-        # op = row.operator('hidemanager.all', text='Hide', icon='HIDE_OFF')
-        # op.hide = True
-        # op.group = True
-        #
-        # op = row.operator('hidemanager.all', text='Unhide', icon='HIDE_ON')
-        # op.hide = False
-        # op.group = True
+
+        hdmg_op = 'hidemanager.all'
+
+        row = col.row(align=True)
+        op = row.operator(hdmg_op, text='Select Objects', icon='RESTRICT_SELECT_OFF')
+        op.operation = 'SELECT'
+        op.group = True
+
+        op = row.operator(hdmg_op, text='Deselect Objects', icon='RESTRICT_SELECT_ON')
+        op.operation = 'DESELECT'
+        op.group = True
+
+        row = col.row(align=True)
+        op = row.operator(hdmg_op, text='Hide Objects', icon='HIDE_ON')
+        op.operation = 'HIDE'
+        op.group = True
+
+        op = row.operator(hdmg_op, text='Show Objects', icon='HIDE_OFF')
+        op.operation = 'SHOW'
+        op.group = True
+
+        row = col.row(align=True)
+        op = row.operator(hdmg_op, text='Disable In Renders', icon='RESTRICT_RENDER_ON')
+        op.operation = 'DISABLE_RENDER'
+        op.group = True
+
+        op = row.operator(hdmg_op, text='Enable In Renders', icon='RESTRICT_RENDER_OFF')
+        op.operation = 'ENABLE_RENDER'
+        op.group = True
+
+        row = col.row(align=True)
+        op = row.operator(hdmg_op, text='Disable In Viewports', icon='RESTRICT_VIEW_ON')
+        op.operation = 'DISABLE_VIEWPORT'
+        op.group = True
+
+        op = row.operator(hdmg_op, text='Enable In Viewports', icon='RESTRICT_VIEW_OFF')
+        op.operation = 'ENABLE_VIEWPORT'
+        op.group = True

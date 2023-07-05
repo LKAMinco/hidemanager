@@ -385,16 +385,8 @@ class HIDEMANAGER_OT_Selected(Operator):
             obj.hide_viewport = True
 
 
-# TODO maybe add filter for collections
-# TODO maybe add filter for modifiers
-# TODO maybe add filter for vertex groups
-# TODO maybe add filter for shape keys
-# TODO maybe add filter for constraints
-# TODO add hide for render
-# TODO add method to operations
+# TODO maybe add filter for greasepencil layers
 # TODO rework to use inheritance of class with operations
-# TODO check for default values for groups in ui
-# TODO rework hide/unhide to enum
 class HIDEMANAGER_OT_All(Operator):
     bl_idname = 'hidemanager.all'
     bl_label = ''
@@ -422,6 +414,7 @@ class HIDEMANAGER_OT_All(Operator):
     constraint = []
     constraint_ignore = []
     groups = []
+    already_checked = []
 
     group: BoolProperty(default=False)
 
@@ -440,9 +433,9 @@ class HIDEMANAGER_OT_All(Operator):
     def description(cls, context, properties):
         if properties.group:
             if context.scene.hidemanager_group_only_active:
-                hdmg_context = 'active group'
+                hdmg_context = 'selected group'
             else:
-                hdmg_context = 'all groups'
+                hdmg_context = 'all enabled groups'
         else:
             hdmg_context = 'all enabled filters'
 
@@ -467,7 +460,6 @@ class HIDEMANAGER_OT_All(Operator):
         scene = context.scene
         self.clear()
         self.getConfig(context, self.group)
-        already_checked = []
 
         if len(scene.hidemanager) == 0:
             return {'FINISHED'}
@@ -476,49 +468,36 @@ class HIDEMANAGER_OT_All(Operator):
             self.collection_ignore) + len(self.material_ignore) + len(self.modifier_ignore) + len(
             self.vertex_group_ignore) + len(self.shape_key_ignore) + len(self.constraint_ignore)
 
-        if ignore_count == 0:
+        filter_count = len(self.contains) + len(self.types) + len(self.hierarchy) + len(self.collection) + len(
+            self.material) + len(self.material_contains) + len(self.modifier) + len(self.modifier_contains) + len(
+            self.vertex_group_contains) + len(self.shape_key_contains) + len(
+            self.constraint)
+
+        if ignore_count > 0:
             # 2 loops needed to check for ignored objects first
             for obj in scene.view_layers[0].objects:
-                skip = False
-                if obj in already_checked:
+                if obj in self.already_checked:
                     continue
 
-        for obj in scene.view_layers[0].objects:
-            if len(scene.hidemanager) == 0:
-                break
-
-            if obj in already_checked:
-                continue
-
-            if obj in self.hierarchy:
-                result = self.checkObject(obj)
-                if result:
+                # only ignore filters -> everything except ignored objects are selected
+                if self.getIgnoredObjects(obj) and filter_count == 0:
                     self.objectAction(obj)
 
-                for child in obj.children_recursive:
-                    result = self.checkObject(child, True)
-                    if not result:
-                        continue
-                    else:
-                        self.objectAction(child)
-                        already_checked.append(child)
-                        continue
-                continue
+        if filter_count > 0:
+            for obj in scene.view_layers[0].objects:
+                if obj in self.already_checked:
+                    continue
 
-            result = self.checkObject(obj)
-            if not result:
-                continue
-            else:
-                self.objectAction(obj)
-                continue
+                if self.checkObject(obj):
+                    self.objectAction(obj)
+                    self.already_checked.append(obj)
 
         return {'FINISHED'}
 
-    def getIgnoredObjects(self, obj: bpy.types.Object, already_checked: list) -> None:
+    def getIgnoredObjects(self, obj: bpy.types.Object) -> bool:
         """Process ignored objects and add them to already_checked list
 
         :param bpy.types.Object obj: Object to check
-        :param list already_checked: List of already checked objects
         :return: None
         """
         has_material = ['MESH', 'CURVE', 'SURFACE', 'META', 'FONT', 'VOLUME', 'GPENCIL', 'GREASEPENCIL']
@@ -527,69 +506,70 @@ class HIDEMANAGER_OT_All(Operator):
         has_shape_key = ['MESH', 'CURVE', 'SURFACE', 'LATTICE']
 
         if obj in self.hierarchy_ignore:
-            already_checked.append(obj)
+            self.already_checked.append(obj)
             for child in obj.children_recursive:
-                already_checked.append(child)
-            return
+                self.already_checked.append(child)
+            return False
 
         if obj.type in self.types_ignore:
-            already_checked.append(obj)
-            return
+            self.already_checked.append(obj)
+            return False
 
         if obj.users_collection in self.collection_ignore:
-            already_checked.append(obj)
-            return
+            self.already_checked.append(obj)
+            return False
 
         for contain in self.ignore:
             if contain in obj.name:
-                already_checked.append(obj)
-                return
+                self.already_checked.append(obj)
+                return False
 
         if obj.type in has_modifier:
             for mod in obj.modifiers:
                 if mod.type in self.modifier_ignore:
-                    already_checked.append(obj)
-                    return
+                    self.already_checked.append(obj)
+                    return False
 
         if obj.type in has_material:
             for mat in self.material_ignore:
                 if mat in obj.material_slots:
-                    already_checked.append(obj)
-                    return
+                    self.already_checked.append(obj)
+                    return False
 
         for const in obj.constraints:
             if const.type in self.constraint_ignore:
-                already_checked.append(obj)
-                return
+                self.already_checked.append(obj)
+                return False
 
         if obj.type in has_vertex_group:
             for contain in self.vertex_group_ignore:
                 for vg in obj.vertex_groups:
                     if contain in vg.name:
-                        already_checked.append(obj)
-                        return
+                        self.already_checked.append(obj)
+                        return False
 
         if obj.type in has_shape_key:
             if obj.data.shape_keys is not None:
                 for contain in self.shape_key_ignore:
                     for sk in obj.data.shape_keys.key_blocks:
                         if contain in sk.name:
-                            already_checked.append(obj)
-                            return
+                            self.already_checked.append(obj)
+                            return False
 
-    def checkObject(self, obj, hierarchy=False):
-        if obj.type in self.types_ignore:
-            return False
+        return True
 
-        for ign in self.ignore:
-            if ign in obj.name:
-                return False
-        # TODO change to list of valid types
-        if obj.type == 'MESH' or obj.type == 'CURVE' or obj.type == 'SURFACE' or obj.type == "META" or obj.type == "FONT":
-            if len(obj.data.materials) != 0:
-                for mat in self.material_ignore:
-                    if mat in obj.data.materials:
-                        return False
+    def checkObject(self, obj: bpy.types.Object) -> bool:
+        """Process objects and return if can be processed
+
+        :param bpy.types.Object obj: Object to check
+        :return: Bool
+        """
+        has_material = ['MESH', 'CURVE', 'SURFACE', 'META', 'FONT', 'VOLUME', 'GPENCIL', 'GREASEPENCIL']
+        has_modifier = ['MESH', 'CURVE', 'SURFACE', 'META', 'FONT', 'VOLUME', 'GPENCIL', 'GREASEPENCIL', 'LATTICE']
+        has_vertex_group = ['MESH', 'LATTICE']
+        has_shape_key = ['MESH', 'CURVE', 'SURFACE', 'LATTICE']
+
+        # vertex_group_contains, shape_key_contains, constraint
 
         if obj.type in self.types:
             return True
@@ -598,18 +578,56 @@ class HIDEMANAGER_OT_All(Operator):
             if contain in obj.name:
                 return True
 
-        if obj.type == 'MESH' or obj.type == 'CURVE' or obj.type == 'SURFACE' or obj.type == "META" or obj.type == "FONT":
-            if len(obj.data.materials) != 0:
-                for mat in self.material:
-                    if mat in obj.data.materials:
+        if len(self.constraint) > 0:
+            for const in obj.constraints:
+                if const.type in self.constraint:
+                    return True
+
+        if obj in self.hierarchy:
+            self.objectAction(obj)
+            self.already_checked.append(obj)
+            for child in obj.children_recursive:
+                self.objectAction(child)
+                self.already_checked.append(child)
+            return False
+
+        if obj.users_collection in self.collection:
+            return False
+
+        if obj.type in has_modifier:
+            if len(self.modifier) > 0:
+                for mod in obj.modifiers:
+                    if mod.type in self.modifier:
                         return True
 
-                for mat in self.material_contains:
-                    for mat_obj in obj.data.materials:
-                        if mat in mat_obj.name:
+                    for contain in self.modifier_contains:
+                        if contain in mod.name:
                             return True
-        if hierarchy:
-            return True
+
+        if obj.type in has_material:
+            if (len(self.material) + len(self.material_contains)) > 0:
+                for mat in obj.material_slots:
+                    if mat.name in self.material:
+                        return True
+
+                    for contain in self.material_contains:
+                        if contain in mat.name:
+                            return True
+
+        if obj.type in has_vertex_group:
+            if len(self.vertex_group_contains) > 0:
+                for vg in obj.vertex_groups:
+                    for contain in self.vertex_group_contains:
+                        if contain in vg.name:
+                            return True
+
+        if obj.type in has_shape_key:
+            if obj.data.shape_keys is not None:
+                if len(self.shape_key_contains) > 0:
+                    for sk in obj.data.shape_keys.key_blocks:
+                        for contain in self.shape_key_contains:
+                            if contain in sk.name:
+                                return True
 
         return False
 
@@ -695,9 +713,9 @@ class HIDEMANAGER_OT_All(Operator):
                 self.material.append(item.material.name)
 
             elif item.line_type == 'MATERIAL_CONTAINS':
-                if item.contains is None:
+                if item.contains == '':
                     continue
-                self.contains.append(item.contains)
+                self.material_contains.append(item.contains)
 
             elif item.line_type == 'MATERIAL_IGNORE':
                 if item.material is None:
@@ -765,6 +783,7 @@ class HIDEMANAGER_OT_All(Operator):
         self.constraint.clear()
         self.constraint_ignore.clear()
         self.groups.clear()
+        self.already_checked.clear()
 
     def getGroups(self, context):
         scene = context.scene
@@ -773,7 +792,6 @@ class HIDEMANAGER_OT_All(Operator):
             try:
                 item = scene.hidemanager_group[index]
                 if not item.line_enable:
-                    self.select = False
                     return {'FINISHED'}
             except IndexError:
                 pass
