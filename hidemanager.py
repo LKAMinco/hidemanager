@@ -385,34 +385,250 @@ class HIDEMANAGER_OT_Selected(Operator):
             obj.hide_viewport = True
 
 
+class Filter:
+    type = ''
+    value = None
+
+    def __init__(self, type='', value=None):
+        self.type = type
+        self.value = value
+
+
+class Fitlers:
+    filters = []
+    use_priority = False
+    filter_count = 0
+    non_ignorable_count = 0
+    priority = ['HIERARCHY', 'TYPE', 'CONTAINS', 'CONSTRAINT', 'COLLECTION', 'MODIFIER', 'MODIFIER_CONTAINS', 'MATERIAL', 'MATERIAL_CONTAINS', 'VERTEX_GROUP_CONTAINS', 'SHAPE_KEY_CONTAINS']
+    has_material = ['MESH', 'CURVE', 'SURFACE', 'META', 'FONT', 'VOLUME', 'GPENCIL', 'GREASEPENCIL']
+    has_modifier = ['MESH', 'CURVE', 'SURFACE', 'META', 'FONT', 'VOLUME', 'GPENCIL', 'GREASEPENCIL', 'LATTICE']
+    has_vertex_group = ['MESH', 'LATTICE']
+    has_shape_key = ['MESH', 'CURVE', 'SURFACE', 'LATTICE']
+    operation = ''
+    already_checked = None
+
+    def execFilters(self, objects):
+        for obj in objects:
+            if obj.name in self.already_checked:
+                continue
+
+            for filter in self.filters:
+                # logging.log(logging.WARNING,
+                #             'Checking ' + str(obj.name) + ' for ' + str(filter.type) + ' ' + str(filter.value))
+                filter_exec = getattr(self, filter.type)
+                res = filter_exec(obj, filter.value)
+                if res:
+                    self.already_checked.append(obj)
+                    if self.non_ignorable_count == 0:
+                        self.objectAction(obj)
+                    break
+
+            self.already_checked.append(obj)
+
+    def clear(self):
+        self.filters.clear()
+        self.use_priority = False
+        self.filter_count = 0
+        self.non_ignorable_count = 0
+
+    def append(self, type='', value='', ignore=False):
+        if ignore:
+            self.use_priority = True
+        else:
+            self.non_ignorable_count += 1
+        filter = Filter(type, value)
+        self.filters.append(filter)
+        self.filter_count += 1
+
+    def sortByFastestPriority(self):
+        self.filters.sort(key=lambda x: self.priority.index(x.type))
+
+    def objectAction(self, obj: bpy.types.Object) -> None:
+        """Performs the action selected in the enum
+
+        :param bpy.types.Object obj: Object to be affected by operation
+        :return: None
+        """
+
+        if self.operation == 'SELECT':
+            obj.select_set(True)
+        elif self.operation == 'DESELECT':
+            obj.select_set(False)
+        elif self.operation == 'HIDE':
+            obj.hide_set(True)
+        elif self.operation == 'SHOW':
+            obj.hide_set(False)
+        elif self.operation == 'ENABLE_RENDER':
+            obj.hide_render = False
+        elif self.operation == 'DISABLE_RENDER':
+            obj.hide_render = True
+        elif self.operation == 'ENABLE_VIEWPORT':
+            obj.hide_viewport = False
+        elif self.operation == 'DISABLE_VIEWPORT':
+            obj.hide_viewport = True
+
+
+    def CONTAINS(self, obj, value):
+        if value in obj.name:
+            self.objectAction(obj)
+            return True
+        return False
+
+    def CONTAINS_IGNORE(self, obj, value):
+        if value in obj.name:
+            return True
+        return False
+
+    def IGNORE(self, obj, value):
+        if value in obj.name:
+            return True
+        return False
+
+    def TYPE(self, obj, value):
+        if obj.type == value:
+            self.objectAction(obj)
+            return True
+        return False
+
+    def TYPE_IGNORE(self, obj, value):
+        if obj.type == value:
+            return True
+        return False
+
+    def HIERARCHY(self, obj, value):
+        if obj is value:
+            self.objectAction(obj)
+            for child in obj.children_recursive:
+                self.objectAction(child)
+                if child not in self.already_checked:
+                    self.already_checked.append(child.name)
+            return True
+        return False
+
+    def HIERARCHY_IGNORE(self, obj, value):
+        if obj == value:
+            return True
+        else:
+            if obj.parent is not None:
+                return self.HIERARCHY_IGNORE(obj.parent, value)
+            else:
+                return False
+        return False
+
+    def COLLECTION(self, obj, value):
+        if value in obj.users_collection:
+            self.objectAction(obj)
+            return True
+        return False
+
+    def COLLECTION_IGNORE(self, obj, value):
+        if value in obj.users_collection:
+            return True
+        return False
+
+    def MATERIAL(self, obj, value):
+        if obj.type in self.has_material:
+            if value in obj.data.materials:
+                self.objectAction(obj)
+                return True
+        return False
+
+    def MATERIAL_CONTAINS(self, obj, value):
+        if obj.type in self.has_material:
+            for mat in obj.data.materials:
+                if value in mat.name:
+                    self.objectAction(obj)
+                    return True
+        return False
+
+    def MATERIAL_IGNORE(self, obj, value):
+        if obj.type in self.has_material:
+            if value in obj.data.materials:
+                return True
+        return False
+
+    def MODIFIER(self, obj, value):
+        if obj.type in self.has_modifier:
+            for mod in obj.modifiers:
+                if value == mod.type:
+                    self.objectAction(obj)
+                    return True
+        return False
+
+    def MODIFIER_CONTAINS(self, obj, value):
+        if obj.type in self.has_modifier:
+            for mod in obj.modifiers:
+                if value in mod.name:
+                    self.objectAction(obj)
+                    return True
+        return False
+
+    def MODIFIER_IGNORE(self, obj, value):
+        if obj.type in self.has_modifier:
+            for mod in obj.modifiers:
+                if value == mod.type:
+                    return True
+        return False
+
+    def VERTEX_GROUP_CONTAINS(self, obj, value):
+        if obj.type in self.has_vertex_group:
+            for vg in obj.vertex_groups:
+                if value in vg.name:
+                    self.objectAction(obj)
+                    return True
+        return False
+
+    def VERTEX_GROUP_IGNORE(self, obj, value):
+        if obj.type in self.has_vertex_group:
+            for vg in obj.vertex_groups:
+                if value in vg.name:
+                    return True
+        return False
+
+    def SHAPE_KEY_CONTAINS(self, obj, value):
+        if obj.type in self.has_shape_key:
+            if obj.data.shape_keys is not None:
+                for sk in obj.data.shape_keys.key_blocks:
+                    if value in sk.name:
+                        self.objectAction(obj)
+                        return True
+        return False
+
+    def SHAPE_KEY_IGNORE(self, obj, value):
+        if obj.type in self.has_shape_key:
+            if obj.data.shape_keys is not None:
+                for sk in obj.data.shape_keys.key_blocks:
+                    if value in sk.name:
+                        return True
+        return False
+
+    def CONSTRAINT(self, obj, value):
+        if obj.type in self.has_constraint:
+            for con in obj.constraints:
+                if value == con.type:
+                    self.objectAction(obj)
+                    return True
+        return False
+
+    def CONSTRAINT_IGNORE(self, obj, value):
+        if obj.type in self.has_constraint:
+            for con in obj.constraints:
+                if value == con.type:
+                    return True
+        return False
+
+
 # TODO maybe add filter for greasepencil layers
 # TODO rework to use inheritance of class with operations
+# TODO add priority to filters
 class HIDEMANAGER_OT_All(Operator):
     bl_idname = 'hidemanager.all'
     bl_label = ''
     bl_description = ''
     bl_options = {'REGISTER'}
 
-    contains = []
-    ignore = []
-    types = []
-    types_ignore = []
-    hierarchy = []
-    hierarchy_ignore = []
-    collection = []
-    collection_ignore = []
-    material = []
-    material_contains = []
-    material_ignore = []
-    modifier = []
-    modifier_contains = []
-    modifier_ignore = []
-    vertex_group_contains = []
-    vertex_group_ignore = []
-    shape_key_contains = []
-    shape_key_ignore = []
-    constraint = []
-    constraint_ignore = []
+    filters = Fitlers()
+
     groups = []
     already_checked = []
 
@@ -458,39 +674,50 @@ class HIDEMANAGER_OT_All(Operator):
 
     def execute(self, context):
         scene = context.scene
-        self.clear()
-        self.getConfig(context, self.group)
-
         if len(scene.hidemanager) == 0:
             return {'FINISHED'}
 
-        ignore_count = len(self.ignore) + len(self.types_ignore) + len(self.hierarchy_ignore) + len(
-            self.collection_ignore) + len(self.material_ignore) + len(self.modifier_ignore) + len(
-            self.vertex_group_ignore) + len(self.shape_key_ignore) + len(self.constraint_ignore)
+        self.clear()
+        self.getConfig(context)
 
-        filter_count = len(self.contains) + len(self.types) + len(self.hierarchy) + len(self.collection) + len(
-            self.material) + len(self.material_contains) + len(self.modifier) + len(self.modifier_contains) + len(
-            self.vertex_group_contains) + len(self.shape_key_contains) + len(
-            self.constraint)
+        self.filters.already_checked = self.already_checked
+        self.filters.operation = self.operation
 
-        if ignore_count > 0:
-            # 2 loops needed to check for ignored objects first
-            for obj in scene.view_layers[0].objects:
-                if obj in self.already_checked:
-                    continue
+        if not self.filters.use_priority:
+            self.filters.sortByFastestPriority()
 
-                # only ignore filters -> everything except ignored objects are selected
-                if self.getIgnoredObjects(obj) and filter_count == 0:
-                    self.objectAction(obj)
+        # for obj in scene.view_layers[0].objects:
+        #     self.filters.execFilters(obj)
 
-        if filter_count > 0:
-            for obj in scene.view_layers[0].objects:
-                if obj in self.already_checked:
-                    continue
+        self.filters.execFilters(scene.view_layers[0].objects)
 
-                if self.checkObject(obj):
-                    self.objectAction(obj)
-                    self.already_checked.append(obj)
+        # ignore_count = len(self.ignore) + len(self.types_ignore) + len(self.hierarchy_ignore) + len(
+        #     self.collection_ignore) + len(self.material_ignore) + len(self.modifier_ignore) + len(
+        #     self.vertex_group_ignore) + len(self.shape_key_ignore) + len(self.constraint_ignore)
+        #
+        # filter_count = len(self.contains) + len(self.types) + len(self.hierarchy) + len(self.collection) + len(
+        #     self.material) + len(self.material_contains) + len(self.modifier) + len(self.modifier_contains) + len(
+        #     self.vertex_group_contains) + len(self.shape_key_contains) + len(
+        #     self.constraint)
+        #
+        # if ignore_count > 0:
+        #     # 2 loops needed to check for ignored objects first
+        #     for obj in scene.view_layers[0].objects:
+        #         if obj in self.already_checked:
+        #             continue
+        #
+        #         # only ignore filters -> everything except ignored objects are selected
+        #         if self.getIgnoredObjects(obj) and filter_count == 0:
+        #             self.objectAction(obj)
+        #
+        # if filter_count > 0:
+        #     for obj in scene.view_layers[0].objects:
+        #         if obj in self.already_checked:
+        #             continue
+        #
+        #         if self.checkObject(obj):
+        #             self.objectAction(obj)
+        #             self.already_checked.append(obj)
 
         return {'FINISHED'}
 
@@ -651,133 +878,133 @@ class HIDEMANAGER_OT_All(Operator):
         elif self.operation == 'DISABLE_VIEWPORT':
             obj.hide_viewport = True
 
-    def getConfig(self, context, group=False):
+    def getConfig(self, context):
         scene = context.scene
-        if group:
+        if self.group:
             self.getGroups(context)
 
         idx = 0
         for item in scene.hidemanager:
             # in case of group, skip filter when is not in group
             idx += 1
-            if idx not in self.groups and group:
+            if idx not in self.groups and self.group:
                 continue
-
             # skip filter if is not enabled
-            if not item.line_enable and not group:
+            if not item.line_enable and not self.group:
                 continue
 
             if item.line_type == 'CONTAINS':
                 if item.contains == '':
                     continue
-                self.contains.append(item.contains)
+                # self.contains.append(item.contains)
+                self.filters.append('CONTAINS', item.contains)
 
             elif item.line_type == 'IGNORE':
                 if item.contains == '':
                     continue
-                self.ignore.append(item.contains)
+                # self.ignore.append(item.contains)
+                self.filters.append('IGNORE', item.contains, True)
 
             elif item.line_type == 'TYPE':
-                self.types.append(item.object_type)
+                # self.types.append(item.object_type)
+                self.filters.append('TYPE', item.object_type)
 
             elif item.line_type == 'TYPE_IGNORE':
-                self.types_ignore.append(item.object_type)
+                # self.types_ignore.append(item.object_type)
+                self.filters.append('TYPE_IGNORE', item.object_type, True)
 
             elif item.line_type == 'HIERARCHY':
                 if item.object is None:
                     continue
-                self.hierarchy.append(item.object)
+                # self.hierarchy.append(item.object)
+                self.filters.append('HIERARCHY', item.object)
 
             elif item.line_type == 'HIERARCHY_IGNORE':
                 if item.object is None:
                     continue
-                self.hierarchy_ignore.append(item.object)
+                # self.hierarchy_ignore.append(item.object)
+                self.filters.append('HIERARCHY_IGNORE', item.object, True)
 
             elif item.line_type == 'COLLECTION':
                 if item.collection is None:
                     continue
-                self.collection.append(item.collection)
+                # self.collection.append(item.collection)
+                self.filters.append('COLLECTION', item.collection)
 
             elif item.line_type == 'COLLECTION_IGNORE':
                 if item.collection is None:
                     continue
-                self.collection_ignore.append(item.collection)
+                # self.collection_ignore.append(item.collection)
+                self.filters.append('COLLECTION_IGNORE', item.collection, True)
 
             elif item.line_type == 'MATERIAL':
                 if item.material is None:
                     continue
-                self.material.append(item.material.name)
+                # self.material.append(item.material.name)
+                self.filters.append('MATERIAL', item.material.name)
 
             elif item.line_type == 'MATERIAL_CONTAINS':
                 if item.contains == '':
                     continue
-                self.material_contains.append(item.contains)
+                # self.material_contains.append(item.contains)
+                self.filters.append('MATERIAL_CONTAINS', item.contains)
 
             elif item.line_type == 'MATERIAL_IGNORE':
                 if item.material is None:
                     continue
-                self.material_ignore.append(item.material.name)
+                # self.material_ignore.append(item.material.name)
+                self.filters.append('MATERIAL_IGNORE', item.material.name, True)
 
             elif item.line_type == 'MODIFIER':
-                self.modifier.append(item.modifier_type)
+                # self.modifier.append(item.modifier_type)
+                self.filters.append('MODIFIER', item.modifier_type)
 
             elif item.line_type == 'MODIFIER_CONTAINS':
                 if item.contains == '':
                     continue
-                self.modifier_contains.append(item.contains)
+                # self.modifier_contains.append(item.contains)
+                self.filters.append('MODIFIER_CONTAINS', item.contains)
 
             elif item.line_type == 'MODIFIER_IGNORE':
-                self.modifier_ignore.append(item.modifier_type)
+                # self.modifier_ignore.append(item.modifier_type)
+                self.filters.append('MODIFIER_IGNORE', item.modifier_type, True)
 
             elif item.line_type == 'VERTEX_GROUP_CONTAINS':
                 if item.contains == '':
                     continue
-                self.vertex_group_contains.append(item.contains)
+                # self.vertex_group_contains.append(item.contains)
+                self.filters.append('VERTEX_GROUP_CONTAINS', item.contains)
 
             elif item.line_type == 'VERTEX_GROUP_IGNORE':
                 if item.contains == '':
                     continue
-                self.vertex_group_ignore.append(item.contains)
+                # self.vertex_group_ignore.append(item.contains)
+                self.filters.append('VERTEX_GROUP_IGNORE', item.contains, True)
 
             elif item.line_type == 'SHAPE_KEY_CONTAINS':
                 if item.contains == '':
                     continue
-                self.shape_key_contains.append(item.contains)
+                # self.shape_key_contains.append(item.contains)
+                self.filters.append('SHAPE_KEY_CONTAINS', item.contains)
 
             elif item.line_type == 'SHAPE_KEY_IGNORE':
                 if item.contains == '':
                     continue
-                self.shape_key_ignore.append(item.contains)
+                # self.shape_key_ignore.append(item.contains)
+                self.filters.append('SHAPE_KEY_IGNORE', item.contains, True)
 
             elif item.line_type == 'CONSTRAINT':
-                self.constraint.append(item.constraint_type)
+                # self.constraint.append(item.constraint_type)
+                self.filters.append('CONSTRAINT', item.constraint_type)
 
             elif item.line_type == 'CONSTRAINT_IGNORE':
-                self.constraint_ignore.append(item.constraint_type)
+                # self.constraint_ignore.append(item.constraint_type)
+                self.filters.append('CONSTRAINT_IGNORE', item.constraint_type, True)
 
-            self.group = False
+        self.group = False
 
     def clear(self):
-        self.contains.clear()
-        self.ignore.clear()
-        self.types.clear()
-        self.types_ignore.clear()
-        self.hierarchy.clear()
-        self.hierarchy_ignore.clear()
-        self.collection.clear()
-        self.collection_ignore.clear()
-        self.material.clear()
-        self.material_contains.clear()
-        self.material_ignore.clear()
-        self.modifier.clear()
-        self.modifier_contains.clear()
-        self.modifier_ignore.clear()
-        self.vertex_group_contains.clear()
-        self.vertex_group_ignore.clear()
-        self.shape_key_contains.clear()
-        self.shape_key_ignore.clear()
-        self.constraint.clear()
-        self.constraint_ignore.clear()
+        self.filters.clear()
         self.groups.clear()
         self.already_checked.clear()
 
