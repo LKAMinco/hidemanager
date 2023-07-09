@@ -399,7 +399,8 @@ class Fitlers:
     use_priority = False
     filter_count = 0
     non_ignorable_count = 0
-    priority = ['HIERARCHY', 'TYPE', 'CONTAINS', 'CONSTRAINT', 'COLLECTION', 'MODIFIER', 'MODIFIER_CONTAINS', 'MATERIAL', 'MATERIAL_CONTAINS', 'VERTEX_GROUP_CONTAINS', 'SHAPE_KEY_CONTAINS']
+    priority = ['HIERARCHY', 'TYPE', 'CONTAINS', 'CONSTRAINT', 'COLLECTION', 'MODIFIER', 'MODIFIER_CONTAINS',
+                'MATERIAL', 'MATERIAL_CONTAINS', 'VERTEX_GROUP_CONTAINS', 'SHAPE_KEY_CONTAINS']
     has_material = ['MESH', 'CURVE', 'SURFACE', 'META', 'FONT', 'VOLUME', 'GPENCIL', 'GREASEPENCIL']
     has_modifier = ['MESH', 'CURVE', 'SURFACE', 'META', 'FONT', 'VOLUME', 'GPENCIL', 'GREASEPENCIL', 'LATTICE']
     has_vertex_group = ['MESH', 'LATTICE']
@@ -466,7 +467,6 @@ class Fitlers:
             obj.hide_viewport = False
         elif self.operation == 'DISABLE_VIEWPORT':
             obj.hide_viewport = True
-
 
     def CONTAINS(self, obj, value):
         if value in obj.name:
@@ -686,173 +686,9 @@ class HIDEMANAGER_OT_All(Operator):
         if not self.filters.use_priority:
             self.filters.sortByFastestPriority()
 
-        # for obj in scene.view_layers[0].objects:
-        #     self.filters.execFilters(obj)
-
         self.filters.execFilters(scene.view_layers[0].objects)
 
-        # ignore_count = len(self.ignore) + len(self.types_ignore) + len(self.hierarchy_ignore) + len(
-        #     self.collection_ignore) + len(self.material_ignore) + len(self.modifier_ignore) + len(
-        #     self.vertex_group_ignore) + len(self.shape_key_ignore) + len(self.constraint_ignore)
-        #
-        # filter_count = len(self.contains) + len(self.types) + len(self.hierarchy) + len(self.collection) + len(
-        #     self.material) + len(self.material_contains) + len(self.modifier) + len(self.modifier_contains) + len(
-        #     self.vertex_group_contains) + len(self.shape_key_contains) + len(
-        #     self.constraint)
-        #
-        # if ignore_count > 0:
-        #     # 2 loops needed to check for ignored objects first
-        #     for obj in scene.view_layers[0].objects:
-        #         if obj in self.already_checked:
-        #             continue
-        #
-        #         # only ignore filters -> everything except ignored objects are selected
-        #         if self.getIgnoredObjects(obj) and filter_count == 0:
-        #             self.objectAction(obj)
-        #
-        # if filter_count > 0:
-        #     for obj in scene.view_layers[0].objects:
-        #         if obj in self.already_checked:
-        #             continue
-        #
-        #         if self.checkObject(obj):
-        #             self.objectAction(obj)
-        #             self.already_checked.append(obj)
-
         return {'FINISHED'}
-
-    def getIgnoredObjects(self, obj: bpy.types.Object) -> bool:
-        """Process ignored objects and add them to already_checked list
-
-        :param bpy.types.Object obj: Object to check
-        :return: None
-        """
-        has_material = ['MESH', 'CURVE', 'SURFACE', 'META', 'FONT', 'VOLUME', 'GPENCIL', 'GREASEPENCIL']
-        has_modifier = ['MESH', 'CURVE', 'SURFACE', 'META', 'FONT', 'VOLUME', 'GPENCIL', 'GREASEPENCIL', 'LATTICE']
-        has_vertex_group = ['MESH', 'LATTICE']
-        has_shape_key = ['MESH', 'CURVE', 'SURFACE', 'LATTICE']
-
-        if obj in self.hierarchy_ignore:
-            self.already_checked.append(obj)
-            for child in obj.children_recursive:
-                self.already_checked.append(child)
-            return False
-
-        if obj.type in self.types_ignore:
-            self.already_checked.append(obj)
-            return False
-
-        if obj.users_collection in self.collection_ignore:
-            self.already_checked.append(obj)
-            return False
-
-        for contain in self.ignore:
-            if contain in obj.name:
-                self.already_checked.append(obj)
-                return False
-
-        if obj.type in has_modifier:
-            for mod in obj.modifiers:
-                if mod.type in self.modifier_ignore:
-                    self.already_checked.append(obj)
-                    return False
-
-        if obj.type in has_material:
-            for mat in self.material_ignore:
-                if mat in obj.material_slots:
-                    self.already_checked.append(obj)
-                    return False
-
-        for const in obj.constraints:
-            if const.type in self.constraint_ignore:
-                self.already_checked.append(obj)
-                return False
-
-        if obj.type in has_vertex_group:
-            for contain in self.vertex_group_ignore:
-                for vg in obj.vertex_groups:
-                    if contain in vg.name:
-                        self.already_checked.append(obj)
-                        return False
-
-        if obj.type in has_shape_key:
-            if obj.data.shape_keys is not None:
-                for contain in self.shape_key_ignore:
-                    for sk in obj.data.shape_keys.key_blocks:
-                        if contain in sk.name:
-                            self.already_checked.append(obj)
-                            return False
-
-        return True
-
-    def checkObject(self, obj: bpy.types.Object) -> bool:
-        """Process objects and return if can be processed
-
-        :param bpy.types.Object obj: Object to check
-        :return: Bool
-        """
-        has_material = ['MESH', 'CURVE', 'SURFACE', 'META', 'FONT', 'VOLUME', 'GPENCIL', 'GREASEPENCIL']
-        has_modifier = ['MESH', 'CURVE', 'SURFACE', 'META', 'FONT', 'VOLUME', 'GPENCIL', 'GREASEPENCIL', 'LATTICE']
-        has_vertex_group = ['MESH', 'LATTICE']
-        has_shape_key = ['MESH', 'CURVE', 'SURFACE', 'LATTICE']
-
-        if obj in self.hierarchy:
-            for child in obj.children_recursive:
-                self.objectAction(child)
-                self.already_checked.append(child)
-            return True
-
-        if obj.type in self.types:
-            return True
-
-        for contain in self.contains:
-            if contain in obj.name:
-                return True
-
-        if len(self.constraint) > 0:
-            for const in obj.constraints:
-                if const.type in self.constraint:
-                    return True
-
-        if obj.users_collection in self.collection:
-            return False
-
-        if obj.type in has_modifier:
-            if len(self.modifier) > 0:
-                for mod in obj.modifiers:
-                    if mod.type in self.modifier:
-                        return True
-
-                    for contain in self.modifier_contains:
-                        if contain in mod.name:
-                            return True
-
-        if obj.type in has_material:
-            if (len(self.material) + len(self.material_contains)) > 0:
-                for mat in obj.material_slots:
-                    if mat.name in self.material:
-                        return True
-
-                    for contain in self.material_contains:
-                        if contain in mat.name:
-                            return True
-
-        if obj.type in has_vertex_group:
-            if len(self.vertex_group_contains) > 0:
-                for vg in obj.vertex_groups:
-                    for contain in self.vertex_group_contains:
-                        if contain in vg.name:
-                            return True
-
-        if obj.type in has_shape_key:
-            if obj.data.shape_keys is not None:
-                if len(self.shape_key_contains) > 0:
-                    for sk in obj.data.shape_keys.key_blocks:
-                        for contain in self.shape_key_contains:
-                            if contain in sk.name:
-                                return True
-
-        return False
 
     def objectAction(self, obj: bpy.types.Object) -> None:
         """Performs the action selected in the enum
