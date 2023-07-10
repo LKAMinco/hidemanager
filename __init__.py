@@ -34,6 +34,8 @@ def register():
     bpy.types.Scene.hidemanager_index = bpy.props.IntProperty()
     bpy.types.Scene.hidemanager_only_active = bpy.props.BoolProperty(default=False)
     bpy.types.Scene.hidemanager_group = bpy.props.CollectionProperty(type=HIDEMANAGER_PG_CustomCollection)
+    bpy.types.Scene.hidemanager_priority = bpy.props.BoolProperty(default=True, name='Priority',
+                                                                  description='If enabled, filters will be executed in order that are specified. If disabled, first will be executed ignore filters and then other. This can speedup the process of filtering')
     bpy.types.Scene.hidemanager_group_index = bpy.props.IntProperty()
     bpy.types.Scene.hidemanager_group_only_active = bpy.props.BoolProperty(default=True)
 

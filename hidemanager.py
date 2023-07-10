@@ -154,7 +154,6 @@ class HIDEMANAGER_OT_State(Operator):
 
 
 # TODO maybe add filter for greasepencil layers
-# TODO rework to use inheritance of class with operations
 class HIDEMANAGER_OT_Selected(Operator):
     bl_idname = 'hidemanager.selected'
     bl_label = ''
@@ -394,7 +393,7 @@ class Filter:
         self.value = value
 
 
-class Fitlers:
+class Filters:
     filters = []
     use_priority = False
     filter_count = 0
@@ -408,23 +407,17 @@ class Fitlers:
     operation = ''
     already_checked = None
 
-    def execFilters(self, objects):
-        for obj in objects:
-            if obj.name in self.already_checked:
-                continue
+    def execFilters(self, obj):
+        for filter in self.filters:
+            filter_exec = getattr(self, filter.type)
+            res = filter_exec(obj, filter.value)
+            if res:
+                self.already_checked.append(obj.name)
+                if self.non_ignorable_count == 0:
+                    self.objectAction(obj)
+                break
 
-            for filter in self.filters:
-                # logging.log(logging.WARNING,
-                #             'Checking ' + str(obj.name) + ' for ' + str(filter.type) + ' ' + str(filter.value))
-                filter_exec = getattr(self, filter.type)
-                res = filter_exec(obj, filter.value)
-                if res:
-                    self.already_checked.append(obj)
-                    if self.non_ignorable_count == 0:
-                        self.objectAction(obj)
-                    break
-
-            self.already_checked.append(obj)
+        self.already_checked.append(obj.name)
 
     def clear(self):
         self.filters.clear()
@@ -618,16 +611,43 @@ class Fitlers:
         return False
 
 
+class FiltersIgnore(Filters):
+    filters = []
+    priority = ['HIERARCHY_IGNORE', 'TYPE_IGNORE', 'IGNORE', 'CONSTRAINT_IGNORE', 'COLLECTION_IGNORE',
+                'MODIFIER_IGNORE', 'MATERIAL_IGNORE', 'VERTEX_GROUP_IGNORE', 'SHAPE_KEY_IGNORE']
+    already_checked = None
+    operation = ''
+
+    def execFilters(self, obj):
+        for filter in self.filters:
+            filter_exec = getattr(self, filter.type)
+            res = filter_exec(obj, filter.value)
+            if res:
+                self.already_checked.append(obj.name)
+                if self.non_ignorable_count == 0:
+                    self.objectAction(obj)
+                break
+
+    def sortByFastestPriority(self):
+        self.filters.sort(key=lambda x: self.priority.index(x.type))
+
+    def HIERARCHY_IGNORE(self, obj, value):
+        if obj == value:
+            self.already_checked.append(obj.name)
+            for child in obj.children_recursive:
+                if child not in self.already_checked:
+                    self.already_checked.append(child.name)
+
+
 # TODO maybe add filter for greasepencil layers
-# TODO rework to use inheritance of class with operations
-# TODO add priority to filters
 class HIDEMANAGER_OT_All(Operator):
     bl_idname = 'hidemanager.all'
     bl_label = ''
     bl_description = ''
     bl_options = {'REGISTER'}
 
-    filters = Fitlers()
+    filters = Filters()
+    filters_ignore = FiltersIgnore()
 
     groups = []
     already_checked = []
@@ -672,6 +692,7 @@ class HIDEMANAGER_OT_All(Operator):
         elif properties.operation == 'DISABLE_VIEWPORT':
             return 'Disable objects in viewport by %s' % hdmg_context
 
+    # TODO add option disable order
     def execute(self, context):
         scene = context.scene
         if len(scene.hidemanager) == 0:
@@ -683,10 +704,26 @@ class HIDEMANAGER_OT_All(Operator):
         self.filters.already_checked = self.already_checked
         self.filters.operation = self.operation
 
+        if not scene.hidemanager_priority:
+            self.filters_ignore.already_checked = self.already_checked
+            self.filters_ignore.operation = self.operation
+
         if not self.filters.use_priority:
             self.filters.sortByFastestPriority()
 
-        self.filters.execFilters(scene.view_layers[0].objects)
+        if not scene.hidemanager_priority:
+            self.filters_ignore.sortByFastestPriority()
+
+            for obj in scene.view_layers[0].objects:
+                if obj.name in self.already_checked:
+                    continue
+                self.filters_ignore.execFilters(obj)
+
+        for obj in scene.view_layers[0].objects:
+            if obj.name in self.already_checked:
+                continue
+            self.filters.execFilters(obj)
+
 
         return {'FINISHED'}
 
@@ -722,25 +759,33 @@ class HIDEMANAGER_OT_All(Operator):
         if self.group:
             idxes = []
             for idx in self.groups:
-                if idx in idxes:
-                    continue
-                try:
-                    self.getLines(scene.hidemanager[idx-1])
-                    idxes.append(idx)
-                except IndexError:
-                    pass
+                if scene.hidemanager_priority:
+                    idx = 0
+                    for item in scene.hidemanager:
+                        idx += 1
+
+                        if idx not in self.groups:
+                            continue
+
+                        self.getLines(item, scene.hidemanager_priority)
+                else:
+                    if idx in idxes:
+                        continue
+                    try:
+                        self.getLines(scene.hidemanager[idx - 1], scene.hidemanager_priority)
+                        idxes.append(idx)
+                    except IndexError:
+                        pass
         else:
             for item in scene.hidemanager:
                 if not item.line_enable:
                     continue
 
-                self.getLines(item)
+                self.getLines(item, scene.hidemanager_priority)
 
-        for filter in self.filters.filters:
-            logging.log(logging.WARNING, filter.type)
         self.group = False
 
-    def getLines(self, item):
+    def getLines(self, item, priority):
         if item.line_type == 'CONTAINS':
             if item.contains == '':
                 return
@@ -751,7 +796,10 @@ class HIDEMANAGER_OT_All(Operator):
             if item.contains == '':
                 return
             # self.ignore.append(item.contains)
-            self.filters.append('IGNORE', item.contains, True)
+            if not priority:
+                self.filters_ignore.append('IGNORE', item.contains)
+            else:
+                self.filters.append('IGNORE', item.contains, True)
 
         elif item.line_type == 'TYPE':
             # self.types.append(item.object_type)
@@ -759,7 +807,10 @@ class HIDEMANAGER_OT_All(Operator):
 
         elif item.line_type == 'TYPE_IGNORE':
             # self.types_ignore.append(item.object_type)
-            self.filters.append('TYPE_IGNORE', item.object_type, True)
+            if not priority:
+                self.filters_ignore.append('TYPE_IGNORE', item.object_type)
+            else:
+                self.filters.append('TYPE_IGNORE', item.object_type, True)
 
         elif item.line_type == 'HIERARCHY':
             if item.object is None:
@@ -771,7 +822,10 @@ class HIDEMANAGER_OT_All(Operator):
             if item.object is None:
                 return
             # self.hierarchy_ignore.append(item.object)
-            self.filters.append('HIERARCHY_IGNORE', item.object, True)
+            if not priority:
+                self.filters_ignore.append('HIERARCHY_IGNORE', item.object)
+            else:
+                self.filters.append('HIERARCHY_IGNORE', item.object, True)
 
         elif item.line_type == 'COLLECTION':
             if item.collection is None:
@@ -783,7 +837,10 @@ class HIDEMANAGER_OT_All(Operator):
             if item.collection is None:
                 return
             # self.collection_ignore.append(item.collection)
-            self.filters.append('COLLECTION_IGNORE', item.collection, True)
+            if not priority:
+                self.filters_ignore.append('COLLECTION_IGNORE', item.collection)
+            else:
+                self.filters.append('COLLECTION_IGNORE', item.collection, True)
 
         elif item.line_type == 'MATERIAL':
             if item.material is None:
@@ -801,7 +858,10 @@ class HIDEMANAGER_OT_All(Operator):
             if item.material is None:
                 return
             # self.material_ignore.append(item.material.name)
-            self.filters.append('MATERIAL_IGNORE', item.material.name, True)
+            if not priority:
+                self.filters_ignore.append('MATERIAL_IGNORE', item.material.name)
+            else:
+                self.filters.append('MATERIAL_IGNORE', item.material.name, True)
 
         elif item.line_type == 'MODIFIER':
             # self.modifier.append(item.modifier_type)
@@ -815,7 +875,10 @@ class HIDEMANAGER_OT_All(Operator):
 
         elif item.line_type == 'MODIFIER_IGNORE':
             # self.modifier_ignore.append(item.modifier_type)
-            self.filters.append('MODIFIER_IGNORE', item.modifier_type, True)
+            if not priority:
+                self.filters_ignore.append('MODIFIER_IGNORE', item.modifier_type)
+            else:
+                self.filters.append('MODIFIER_IGNORE', item.modifier_type, True)
 
         elif item.line_type == 'VERTEX_GROUP_CONTAINS':
             if item.contains == '':
@@ -827,7 +890,10 @@ class HIDEMANAGER_OT_All(Operator):
             if item.contains == '':
                 return
             # self.vertex_group_ignore.append(item.contains)
-            self.filters.append('VERTEX_GROUP_IGNORE', item.contains, True)
+            if not priority:
+                self.filters_ignore.append('VERTEX_GROUP_IGNORE', item.contains)
+            else:
+                self.filters.append('VERTEX_GROUP_IGNORE', item.contains, True)
 
         elif item.line_type == 'SHAPE_KEY_CONTAINS':
             if item.contains == '':
@@ -839,7 +905,10 @@ class HIDEMANAGER_OT_All(Operator):
             if item.contains == '':
                 return
             # self.shape_key_ignore.append(item.contains)
-            self.filters.append('SHAPE_KEY_IGNORE', item.contains, True)
+            if not priority:
+                self.filters_ignore.append('SHAPE_KEY_IGNORE', item.contains)
+            else:
+                self.filters.append('SHAPE_KEY_IGNORE', item.contains, True)
 
         elif item.line_type == 'CONSTRAINT':
             # self.constraint.append(item.constraint_type)
@@ -847,10 +916,14 @@ class HIDEMANAGER_OT_All(Operator):
 
         elif item.line_type == 'CONSTRAINT_IGNORE':
             # self.constraint_ignore.append(item.constraint_type)
-            self.filters.append('CONSTRAINT_IGNORE', item.constraint_type, True)
+            if not priority:
+                self.filters_ignore.append('CONSTRAINT_IGNORE', item.constraint_type)
+            else:
+                self.filters.append('CONSTRAINT_IGNORE', item.constraint_type, True)
 
     def clear(self):
         self.filters.clear()
+        self.filters_ignore.clear()
         self.groups.clear()
         self.already_checked.clear()
 
