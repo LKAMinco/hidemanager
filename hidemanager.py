@@ -719,125 +719,135 @@ class HIDEMANAGER_OT_All(Operator):
         if self.group:
             self.getGroups(context)
 
-        idx = 0
-        for item in scene.hidemanager:
-            # in case of group, skip filter when is not in group
-            idx += 1
-            if idx not in self.groups and self.group:
-                continue
-            # skip filter if is not enabled
-            if not item.line_enable and not self.group:
-                continue
-
-            if item.line_type == 'CONTAINS':
-                if item.contains == '':
+        if self.group:
+            idxes = []
+            for idx in self.groups:
+                if idx in idxes:
                     continue
-                # self.contains.append(item.contains)
-                self.filters.append('CONTAINS', item.contains)
-
-            elif item.line_type == 'IGNORE':
-                if item.contains == '':
+                try:
+                    self.getLines(scene.hidemanager[idx-1])
+                    idxes.append(idx)
+                except IndexError:
+                    pass
+        else:
+            for item in scene.hidemanager:
+                if not item.line_enable:
                     continue
-                # self.ignore.append(item.contains)
-                self.filters.append('IGNORE', item.contains, True)
 
-            elif item.line_type == 'TYPE':
-                # self.types.append(item.object_type)
-                self.filters.append('TYPE', item.object_type)
+                self.getLines(item)
 
-            elif item.line_type == 'TYPE_IGNORE':
-                # self.types_ignore.append(item.object_type)
-                self.filters.append('TYPE_IGNORE', item.object_type, True)
-
-            elif item.line_type == 'HIERARCHY':
-                if item.object is None:
-                    continue
-                # self.hierarchy.append(item.object)
-                self.filters.append('HIERARCHY', item.object)
-
-            elif item.line_type == 'HIERARCHY_IGNORE':
-                if item.object is None:
-                    continue
-                # self.hierarchy_ignore.append(item.object)
-                self.filters.append('HIERARCHY_IGNORE', item.object, True)
-
-            elif item.line_type == 'COLLECTION':
-                if item.collection is None:
-                    continue
-                # self.collection.append(item.collection)
-                self.filters.append('COLLECTION', item.collection)
-
-            elif item.line_type == 'COLLECTION_IGNORE':
-                if item.collection is None:
-                    continue
-                # self.collection_ignore.append(item.collection)
-                self.filters.append('COLLECTION_IGNORE', item.collection, True)
-
-            elif item.line_type == 'MATERIAL':
-                if item.material is None:
-                    continue
-                # self.material.append(item.material.name)
-                self.filters.append('MATERIAL', item.material.name)
-
-            elif item.line_type == 'MATERIAL_CONTAINS':
-                if item.contains == '':
-                    continue
-                # self.material_contains.append(item.contains)
-                self.filters.append('MATERIAL_CONTAINS', item.contains)
-
-            elif item.line_type == 'MATERIAL_IGNORE':
-                if item.material is None:
-                    continue
-                # self.material_ignore.append(item.material.name)
-                self.filters.append('MATERIAL_IGNORE', item.material.name, True)
-
-            elif item.line_type == 'MODIFIER':
-                # self.modifier.append(item.modifier_type)
-                self.filters.append('MODIFIER', item.modifier_type)
-
-            elif item.line_type == 'MODIFIER_CONTAINS':
-                if item.contains == '':
-                    continue
-                # self.modifier_contains.append(item.contains)
-                self.filters.append('MODIFIER_CONTAINS', item.contains)
-
-            elif item.line_type == 'MODIFIER_IGNORE':
-                # self.modifier_ignore.append(item.modifier_type)
-                self.filters.append('MODIFIER_IGNORE', item.modifier_type, True)
-
-            elif item.line_type == 'VERTEX_GROUP_CONTAINS':
-                if item.contains == '':
-                    continue
-                # self.vertex_group_contains.append(item.contains)
-                self.filters.append('VERTEX_GROUP_CONTAINS', item.contains)
-
-            elif item.line_type == 'VERTEX_GROUP_IGNORE':
-                if item.contains == '':
-                    continue
-                # self.vertex_group_ignore.append(item.contains)
-                self.filters.append('VERTEX_GROUP_IGNORE', item.contains, True)
-
-            elif item.line_type == 'SHAPE_KEY_CONTAINS':
-                if item.contains == '':
-                    continue
-                # self.shape_key_contains.append(item.contains)
-                self.filters.append('SHAPE_KEY_CONTAINS', item.contains)
-
-            elif item.line_type == 'SHAPE_KEY_IGNORE':
-                if item.contains == '':
-                    continue
-                # self.shape_key_ignore.append(item.contains)
-                self.filters.append('SHAPE_KEY_IGNORE', item.contains, True)
-
-            elif item.line_type == 'CONSTRAINT':
-                # self.constraint.append(item.constraint_type)
-                self.filters.append('CONSTRAINT', item.constraint_type)
-
-            elif item.line_type == 'CONSTRAINT_IGNORE':
-                # self.constraint_ignore.append(item.constraint_type)
-                self.filters.append('CONSTRAINT_IGNORE', item.constraint_type, True)
-
+        for filter in self.filters.filters:
+            logging.log(logging.WARNING, filter.type)
         self.group = False
+
+    def getLines(self, item):
+        if item.line_type == 'CONTAINS':
+            if item.contains == '':
+                return
+            # self.contains.append(item.contains)
+            self.filters.append('CONTAINS', item.contains)
+
+        elif item.line_type == 'IGNORE':
+            if item.contains == '':
+                return
+            # self.ignore.append(item.contains)
+            self.filters.append('IGNORE', item.contains, True)
+
+        elif item.line_type == 'TYPE':
+            # self.types.append(item.object_type)
+            self.filters.append('TYPE', item.object_type)
+
+        elif item.line_type == 'TYPE_IGNORE':
+            # self.types_ignore.append(item.object_type)
+            self.filters.append('TYPE_IGNORE', item.object_type, True)
+
+        elif item.line_type == 'HIERARCHY':
+            if item.object is None:
+                return
+            # self.hierarchy.append(item.object)
+            self.filters.append('HIERARCHY', item.object)
+
+        elif item.line_type == 'HIERARCHY_IGNORE':
+            if item.object is None:
+                return
+            # self.hierarchy_ignore.append(item.object)
+            self.filters.append('HIERARCHY_IGNORE', item.object, True)
+
+        elif item.line_type == 'COLLECTION':
+            if item.collection is None:
+                return
+            # self.collection.append(item.collection)
+            self.filters.append('COLLECTION', item.collection)
+
+        elif item.line_type == 'COLLECTION_IGNORE':
+            if item.collection is None:
+                return
+            # self.collection_ignore.append(item.collection)
+            self.filters.append('COLLECTION_IGNORE', item.collection, True)
+
+        elif item.line_type == 'MATERIAL':
+            if item.material is None:
+                return
+            # self.material.append(item.material.name)
+            self.filters.append('MATERIAL', item.material.name)
+
+        elif item.line_type == 'MATERIAL_CONTAINS':
+            if item.contains == '':
+                return
+            # self.material_contains.append(item.contains)
+            self.filters.append('MATERIAL_CONTAINS', item.contains)
+
+        elif item.line_type == 'MATERIAL_IGNORE':
+            if item.material is None:
+                return
+            # self.material_ignore.append(item.material.name)
+            self.filters.append('MATERIAL_IGNORE', item.material.name, True)
+
+        elif item.line_type == 'MODIFIER':
+            # self.modifier.append(item.modifier_type)
+            self.filters.append('MODIFIER', item.modifier_type)
+
+        elif item.line_type == 'MODIFIER_CONTAINS':
+            if item.contains == '':
+                return
+            # self.modifier_contains.append(item.contains)
+            self.filters.append('MODIFIER_CONTAINS', item.contains)
+
+        elif item.line_type == 'MODIFIER_IGNORE':
+            # self.modifier_ignore.append(item.modifier_type)
+            self.filters.append('MODIFIER_IGNORE', item.modifier_type, True)
+
+        elif item.line_type == 'VERTEX_GROUP_CONTAINS':
+            if item.contains == '':
+                return
+            # self.vertex_group_contains.append(item.contains)
+            self.filters.append('VERTEX_GROUP_CONTAINS', item.contains)
+
+        elif item.line_type == 'VERTEX_GROUP_IGNORE':
+            if item.contains == '':
+                return
+            # self.vertex_group_ignore.append(item.contains)
+            self.filters.append('VERTEX_GROUP_IGNORE', item.contains, True)
+
+        elif item.line_type == 'SHAPE_KEY_CONTAINS':
+            if item.contains == '':
+                return
+            # self.shape_key_contains.append(item.contains)
+            self.filters.append('SHAPE_KEY_CONTAINS', item.contains)
+
+        elif item.line_type == 'SHAPE_KEY_IGNORE':
+            if item.contains == '':
+                return
+            # self.shape_key_ignore.append(item.contains)
+            self.filters.append('SHAPE_KEY_IGNORE', item.contains, True)
+
+        elif item.line_type == 'CONSTRAINT':
+            # self.constraint.append(item.constraint_type)
+            self.filters.append('CONSTRAINT', item.constraint_type)
+
+        elif item.line_type == 'CONSTRAINT_IGNORE':
+            # self.constraint_ignore.append(item.constraint_type)
+            self.filters.append('CONSTRAINT_IGNORE', item.constraint_type, True)
 
     def clear(self):
         self.filters.clear()
@@ -896,4 +906,4 @@ class HIDEMANAGER_OT_All(Operator):
                                 self.groups.append(int(x))
                             except ValueError:
                                 self.report({'ERROR'}, 'Group id must be a number, group "%s" ignored' % x)
-        self.groups = (list(set(self.groups)))
+        # self.groups = (list(set(self.groups)))

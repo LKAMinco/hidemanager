@@ -116,8 +116,9 @@ class HIDEMANAGER_PG_CustomCollection(PropertyGroup):
     collection: PointerProperty(type=bpy.types.Collection, name='Collection')
 
     group: StringProperty(default='', name='Group filters',
-                          description='To make a group, fill this line with numbers (ids of filters from Hide Manager Filters) separated with comma or use range first - id-last id. Example: 1,3-5,7,8-10,12'
-                                      '\nGroup filters uses both active and inactive filters from Hide Manager Filters')
+                          description='To make a group, fill this line with numbers (ids of filters from Hide Manager Filters) separated with comma or use range "first_id - last_id". Example: 1,8-10,7,3-5,12'
+                                      '\nGroup filters uses both active and inactive filters from Hide Manager Filters !!!'
+                                      '\nFilters are executed in order that are specified in this line !!!')
 
     group_name: StringProperty(default='Name', name='Group name', description='Name of group')
 
