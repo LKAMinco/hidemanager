@@ -724,32 +724,7 @@ class HIDEMANAGER_OT_All(Operator):
                 continue
             self.filters.execFilters(obj)
 
-
         return {'FINISHED'}
-
-    def objectAction(self, obj: bpy.types.Object) -> None:
-        """Performs the action selected in the enum
-
-        :param bpy.types.Object obj: Object to be affected by operation
-        :return: None
-        """
-
-        if self.operation == 'SELECT':
-            obj.select_set(True)
-        elif self.operation == 'DESELECT':
-            obj.select_set(False)
-        elif self.operation == 'HIDE':
-            obj.hide_set(True)
-        elif self.operation == 'SHOW':
-            obj.hide_set(False)
-        elif self.operation == 'ENABLE_RENDER':
-            obj.hide_render = False
-        elif self.operation == 'DISABLE_RENDER':
-            obj.hide_render = True
-        elif self.operation == 'ENABLE_VIEWPORT':
-            obj.hide_viewport = False
-        elif self.operation == 'DISABLE_VIEWPORT':
-            obj.hide_viewport = True
 
     def getConfig(self, context):
         scene = context.scene
