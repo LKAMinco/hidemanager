@@ -714,15 +714,17 @@ class HIDEMANAGER_OT_All(Operator):
         if not scene.hidemanager_priority:
             self.filters_ignore.sortByFastestPriority()
 
+            if self.filters_ignore.filter_count > 0:
+                for obj in scene.view_layers[0].objects:
+                    if obj.name in self.already_checked:
+                        continue
+                    self.filters_ignore.execFilters(obj)
+
+        if self.filters.filter_count > 0:
             for obj in scene.view_layers[0].objects:
                 if obj.name in self.already_checked:
                     continue
-                self.filters_ignore.execFilters(obj)
-
-        for obj in scene.view_layers[0].objects:
-            if obj.name in self.already_checked:
-                continue
-            self.filters.execFilters(obj)
+                self.filters.execFilters(obj)
 
         return {'FINISHED'}
 
