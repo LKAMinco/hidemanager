@@ -4,13 +4,14 @@ from .hidemanager_ui import *
 from .hidemanager_data import *
 
 bl_info = {
-    "name": "Hide Manager",
+    "name": "HideManager Pro",
     "author": "LKAMinco",
     "description": "Tools for custom hide parameters for objects",
     "blender": (2, 80, 0),
+    "version": (1, 2, 0),
     "location": "View3D",
     "warning": "",
-    "category": "Object"
+    "category": "3D View",
 }
 
 classes = (
@@ -32,12 +33,16 @@ def register():
         bpy.utils.register_class(cls)
     bpy.types.Scene.hidemanager = bpy.props.CollectionProperty(type=HIDEMANAGER_PG_CustomCollection)
     bpy.types.Scene.hidemanager_index = bpy.props.IntProperty()
-    bpy.types.Scene.hidemanager_only_active = bpy.props.BoolProperty(default=False)
+    bpy.types.Scene.hidemanager_only_active = bpy.props.BoolProperty(default=False, name='Only Selected',
+                                                                     description='If enabled, only selected filter will be executed')
     bpy.types.Scene.hidemanager_group = bpy.props.CollectionProperty(type=HIDEMANAGER_PG_CustomCollection)
     bpy.types.Scene.hidemanager_priority = bpy.props.BoolProperty(default=True, name='Priority',
                                                                   description='If enabled, filters will be executed in order that are specified. If disabled, first will be executed ignore filters and then other. This can speedup the process of filtering')
     bpy.types.Scene.hidemanager_group_index = bpy.props.IntProperty()
-    bpy.types.Scene.hidemanager_group_only_active = bpy.props.BoolProperty(default=True)
+    bpy.types.Scene.hidemanager_group_only_active = bpy.props.BoolProperty(default=True, name='Only Selected',
+                                                                           description='If enabled, only selected group filter will be executed. If disabled, all group filters will be executed. If order is enabled and selected group disabled, filters will be executed in order that are specified in from lowes enabled group to highest (duplicates are executed also e.g. 3,1,3 -> 3 will be executed as first but after 1 will be executed too)')
+    bpy.types.Scene.hidemanager_group_order = bpy.props.BoolProperty(default=True, name='Use filter order',
+                                                                     description='If enabled, filters will be executed in order that are specified in group. If disabled, first will be executed ignore filters and then other')
 
 
 def unregister():

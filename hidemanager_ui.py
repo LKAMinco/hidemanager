@@ -107,12 +107,29 @@ class HIDEMANAGER_PT_List(Panel):
 
         row = layout.row()
         col = row.column(align=True)
+
+        col.separator()
+        row = col.row(align=True)
+
+        priority = scene.hidemanager_priority
+        selected = scene.hidemanager_only_active
+
+        if not selected and not priority:
+            row.label(text='!!! ALL ENABLED FILTERS, IGNORE FILTERS FIRST, THEN OTHER FILTERS !!!')
+        elif not selected and priority:
+            row.label(text='!!! ALL ENABLED FILTERS, FILTERS IN ORDER THAT ARE SPECIFIED !!!')
+        elif selected and not priority:
+            row.label(text='!!! ONLY SELECTED FILTER !!!')
+        elif selected and priority:
+            row.label(text='!!! ONLY SELECTED FILTER !!!')
+        col.separator()
+
+        row = col.row(align=True)
+        row.label(text='Use only selected filter')
+        row.prop(scene, 'hidemanager_only_active', text=str(scene.hidemanager_only_active), toggle=True, slider=True)
         row = col.row(align=True)
         row.label(text='Use filter priority')
         row.prop(scene, 'hidemanager_priority', text=str(scene.hidemanager_priority), toggle=True, slider=True)
-        row = col.row(align=True)
-        row.label(text='Use only active group')
-        row.prop(scene, 'hidemanager_only_active', text=str(scene.hidemanager_only_active), toggle=True, slider=True)
         row = col.row(align=True)
 
         if scene.hidemanager_only_active:
@@ -134,7 +151,6 @@ class HIDEMANAGER_PT_List(Panel):
             row.operator(hdmg_op, text='Enable In Viewports',
                          icon='RESTRICT_VIEW_OFF').operation = 'ENABLE_VIEWPORT'
 
-            # TODO maybe groups = False will be needed
         else:
             hdmg_op = 'hidemanager.all'
             row.operator(hdmg_op, text='Select Objects', icon='RESTRICT_SELECT_OFF').operation = 'SELECT'
@@ -197,9 +213,29 @@ class HIDEMANAGER_PT_GroupList(Panel):
 
         row = layout.row()
         col = row.column(align=True)
+        col.separator()
         row = col.row(align=True)
-        row.label(text='Use only active group')
+
+        order = scene.hidemanager_group_order
+        selected = scene.hidemanager_group_only_active
+
+        if not selected and not order:
+            row.label(text='!!! ALL GROUPS, IGNORE FILTERS FIRST, THEN OTHER FILTERS !!!')
+        elif not selected and order:
+            row.label(text='!!! ALL GROUPS, FILTERS IN ORDER THAT ARE SPECIFIED IN GROUPS !!!')
+        elif selected and not order:
+            row.label(text='!!! ONLY SELECTED GROUP, IGNORE FILTERS FIRST THEN OTHER FILTERS !!!')
+        elif selected and order:
+            row.label(text='!!! ONLY SELECTED GROUP, FILTERS IN ORDER THAT ARE SPECIFIED IN GROUP !!!')
+        col.separator()
+
+        row = col.row(align=True)
+        row.label(text='Use only selected group')
         row.prop(scene, 'hidemanager_group_only_active', text=str(scene.hidemanager_group_only_active), toggle=True,
+                 slider=True)
+        row = col.row(align=True)
+        row.label(text='Use filters in specified order')
+        row.prop(scene, 'hidemanager_group_order', text=str(scene.hidemanager_group_order), toggle=True,
                  slider=True)
 
         hdmg_op = 'hidemanager.all'

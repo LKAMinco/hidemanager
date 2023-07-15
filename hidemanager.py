@@ -488,13 +488,18 @@ class Filters:
             return True
         return False
 
+    def HIERARCHY_CHECK(self, obj, value):
+        if obj == value:
+            return True
+        else:
+            if obj.parent is not None:
+                return self.HIERARCHY_CHECK(obj.parent, value)
+            else:
+                return False
+
     def HIERARCHY(self, obj, value):
-        if obj is value:
+        if self.HIERARCHY_CHECK(obj, value):
             self.objectAction(obj)
-            for child in obj.children_recursive:
-                self.objectAction(child)
-                if child not in self.already_checked:
-                    self.already_checked.append(child.name)
             return True
         return False
 
@@ -704,14 +709,14 @@ class HIDEMANAGER_OT_All(Operator):
         self.filters.already_checked = self.already_checked
         self.filters.operation = self.operation
 
-        if not scene.hidemanager_priority:
+        if not self.filters.use_priority:
             self.filters_ignore.already_checked = self.already_checked
             self.filters_ignore.operation = self.operation
 
         if not self.filters.use_priority:
             self.filters.sortByFastestPriority()
 
-        if not scene.hidemanager_priority:
+        if not self.filters.use_priority:
             self.filters_ignore.sortByFastestPriority()
 
             if self.filters_ignore.filter_count > 0:
@@ -734,23 +739,20 @@ class HIDEMANAGER_OT_All(Operator):
             self.getGroups(context)
 
         if self.group:
-            idxes = []
-            for idx in self.groups:
-                if scene.hidemanager_priority:
-                    idx = 0
-                    for item in scene.hidemanager:
-                        idx += 1
+            if not scene.hidemanager_group_order:
+                self.groups = (list(set(self.groups)))
+                idx = 0
+                for item in scene.hidemanager:
+                    idx += 1
 
-                        if idx not in self.groups:
-                            continue
-
-                        self.getLines(item, scene.hidemanager_priority)
-                else:
-                    if idx in idxes:
+                    if idx not in self.groups:
                         continue
+
+                    self.getLines(item, False)
+            else:
+                for idx in self.groups:
                     try:
-                        self.getLines(scene.hidemanager[idx - 1], scene.hidemanager_priority)
-                        idxes.append(idx)
+                        self.getLines(scene.hidemanager[idx - 1], True)
                     except IndexError:
                         pass
         else:
