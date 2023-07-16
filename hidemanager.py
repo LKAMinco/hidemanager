@@ -413,9 +413,9 @@ class Filters:
             res = filter_exec(obj, filter.value)
             if res:
                 self.already_checked.append(obj.name)
-                if self.non_ignorable_count == 0:
-                    self.objectAction(obj)
-                break
+                return
+        if self.non_ignorable_count == 0:
+            self.objectAction(obj)
 
         self.already_checked.append(obj.name)
 
@@ -629,9 +629,10 @@ class FiltersIgnore(Filters):
             res = filter_exec(obj, filter.value)
             if res:
                 self.already_checked.append(obj.name)
-                if self.non_ignorable_count == 0:
-                    self.objectAction(obj)
-                break
+                return
+
+        if self.non_ignorable_count == 0:
+            self.objectAction(obj)
 
     def sortByFastestPriority(self):
         self.filters.sort(key=lambda x: self.priority.index(x.type))
@@ -776,7 +777,7 @@ class HIDEMANAGER_OT_All(Operator):
                 return
             # self.ignore.append(item.contains)
             if not priority:
-                self.filters_ignore.append('IGNORE', item.contains)
+                self.filters_ignore.append('IGNORE', item.contains, True)
             else:
                 self.filters.append('IGNORE', item.contains, True)
 
@@ -787,7 +788,7 @@ class HIDEMANAGER_OT_All(Operator):
         elif item.line_type == 'TYPE_IGNORE':
             # self.types_ignore.append(item.object_type)
             if not priority:
-                self.filters_ignore.append('TYPE_IGNORE', item.object_type)
+                self.filters_ignore.append('TYPE_IGNORE', item.object_type, True)
             else:
                 self.filters.append('TYPE_IGNORE', item.object_type, True)
 
@@ -802,7 +803,7 @@ class HIDEMANAGER_OT_All(Operator):
                 return
             # self.hierarchy_ignore.append(item.object)
             if not priority:
-                self.filters_ignore.append('HIERARCHY_IGNORE', item.object)
+                self.filters_ignore.append('HIERARCHY_IGNORE', item.object, True)
             else:
                 self.filters.append('HIERARCHY_IGNORE', item.object, True)
 
@@ -817,7 +818,7 @@ class HIDEMANAGER_OT_All(Operator):
                 return
             # self.collection_ignore.append(item.collection)
             if not priority:
-                self.filters_ignore.append('COLLECTION_IGNORE', item.collection)
+                self.filters_ignore.append('COLLECTION_IGNORE', item.collection, True)
             else:
                 self.filters.append('COLLECTION_IGNORE', item.collection, True)
 
@@ -838,7 +839,7 @@ class HIDEMANAGER_OT_All(Operator):
                 return
             # self.material_ignore.append(item.material.name)
             if not priority:
-                self.filters_ignore.append('MATERIAL_IGNORE', item.material.name)
+                self.filters_ignore.append('MATERIAL_IGNORE', item.material.name, True)
             else:
                 self.filters.append('MATERIAL_IGNORE', item.material.name, True)
 
@@ -855,7 +856,7 @@ class HIDEMANAGER_OT_All(Operator):
         elif item.line_type == 'MODIFIER_IGNORE':
             # self.modifier_ignore.append(item.modifier_type)
             if not priority:
-                self.filters_ignore.append('MODIFIER_IGNORE', item.modifier_type)
+                self.filters_ignore.append('MODIFIER_IGNORE', item.modifier_type, True)
             else:
                 self.filters.append('MODIFIER_IGNORE', item.modifier_type, True)
 
@@ -870,7 +871,7 @@ class HIDEMANAGER_OT_All(Operator):
                 return
             # self.vertex_group_ignore.append(item.contains)
             if not priority:
-                self.filters_ignore.append('VERTEX_GROUP_IGNORE', item.contains)
+                self.filters_ignore.append('VERTEX_GROUP_IGNORE', item.contains, True)
             else:
                 self.filters.append('VERTEX_GROUP_IGNORE', item.contains, True)
 
@@ -885,7 +886,7 @@ class HIDEMANAGER_OT_All(Operator):
                 return
             # self.shape_key_ignore.append(item.contains)
             if not priority:
-                self.filters_ignore.append('SHAPE_KEY_IGNORE', item.contains)
+                self.filters_ignore.append('SHAPE_KEY_IGNORE', item.contains, True)
             else:
                 self.filters.append('SHAPE_KEY_IGNORE', item.contains, True)
 
@@ -896,7 +897,7 @@ class HIDEMANAGER_OT_All(Operator):
         elif item.line_type == 'CONSTRAINT_IGNORE':
             # self.constraint_ignore.append(item.constraint_type)
             if not priority:
-                self.filters_ignore.append('CONSTRAINT_IGNORE', item.constraint_type)
+                self.filters_ignore.append('CONSTRAINT_IGNORE', item.constraint_type, True)
             else:
                 self.filters.append('CONSTRAINT_IGNORE', item.constraint_type, True)
 
