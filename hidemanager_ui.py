@@ -1,6 +1,9 @@
+import logging
+
 import bpy
 from bpy.props import EnumProperty, StringProperty
 from bpy.types import PropertyGroup, UIList, Panel
+from .icons import icons
 
 
 class HIDEMANAGER_UL_Items(UIList):
@@ -11,16 +14,22 @@ class HIDEMANAGER_UL_Items(UIList):
         split.enabled = item.line_enable
         split.label(text=str(index + 1) + '.')
         split = split.split(factor=0.3, align=True)
-        split.prop(item, 'line_type', text='', toggle=False, slider=True)
+        if 'IGNORE' in item.line_type:
+            split.prop(item, 'line_type', text='', toggle=False, slider=True, icon_value=icons[item.line_type].icon_id)
+        else:
+            icon = item.bl_rna.properties['line_type'].enum_items[item.line_type].icon
+            split.prop(item, 'line_type', text='', toggle=False, slider=True, icon=icon)
 
         if item.line_type == 'CONTAINS':
             split.prop(item, 'contains', text='', toggle=False, slider=True, icon='ALIGN_LEFT')
         elif item.line_type == 'IGNORE':
             split.prop(item, 'contains', text='', toggle=False, slider=True, icon='ALIGN_LEFT')
         elif item.line_type == 'TYPE':
-            split.prop(item, 'object_type', text='', toggle=False, slider=True, icon='ALIGN_LEFT')
+            icon = item.bl_rna.properties['object_type'].enum_items[item.object_type].icon
+            split.prop(item, 'object_type', text='', toggle=False, slider=True, icon=icon)
         elif item.line_type == 'TYPE_IGNORE':
-            split.prop(item, 'object_type', text='', toggle=False, slider=True, icon='ALIGN_LEFT')
+            icon = item.bl_rna.properties['object_type'].enum_items[item.object_type].icon
+            split.prop(item, 'object_type', text='', toggle=False, slider=True, icon=icon)
         elif item.line_type == 'HIERARCHY':
             split.prop(item, 'object', text='', toggle=False, slider=True, icon='OBJECT_DATA')
         elif item.line_type == 'HIERARCHY_IGNORE':
@@ -30,17 +39,22 @@ class HIDEMANAGER_UL_Items(UIList):
         elif item.line_type == 'COLLECTION_IGNORE':
             split.prop(item, 'collection', text='', toggle=False, slider=True, icon='OUTLINER_COLLECTION')
         elif item.line_type == 'MATERIAL':
+            if item.material is not None:
+                split = split.split(factor=0.06)
+                icon = item.material.preview.icon_id
+                split.label(text="", icon_value=icon)
             split.prop(item, 'material', text='', toggle=False, slider=True, icon='MATERIAL')
         elif item.line_type == 'MATERIAL_CONTAINS':
             split.prop(item, 'contains', text='', toggle=False, slider=True, icon='ALIGN_LEFT')
         elif item.line_type == 'MATERIAL_IGNORE':
             split.prop(item, 'material', text='', toggle=False, slider=True, icon='MATERIAL')
         elif item.line_type == 'MODIFIER':
-            split.prop(item, 'modifier_type', text='', toggle=False, slider=True, icon='ALIGN_LEFT')
+            icon = item.bl_rna.properties['modifier_type'].enum_items[item.modifier_type].icon
+            split.prop(item, 'modifier_type', text='', toggle=False, slider=True, icon=icon)
         elif item.line_type == 'MODIFIER_CONTAINS':
             split.prop(item, 'contains', text='', toggle=False, slider=True, icon='ALIGN_LEFT')
         elif item.line_type == 'MODIFIER_IGNORE':
-            split.prop(item, 'modifier_type', text='', toggle=False, slider=True, icon='ALIGN_LEFT')
+            split.prop(item, 'modifier_type', text='', toggle=False, slider=True)
         elif item.line_type == 'VERTEX_GROUP_CONTAINS':
             split.prop(item, 'contains', text='', toggle=False, slider=True, icon='ALIGN_LEFT')
         elif item.line_type == 'VERTEX_GROUP_IGNORE':
@@ -50,9 +64,11 @@ class HIDEMANAGER_UL_Items(UIList):
         elif item.line_type == 'SHAPE_KEY_IGNORE':
             split.prop(item, 'contains', text='', toggle=False, slider=True, icon='ALIGN_LEFT')
         elif item.line_type == 'CONSTRAINT':
-            split.prop(item, 'constraint_type', text='', toggle=False, slider=True, icon='ALIGN_LEFT')
+            icon = item.bl_rna.properties['constraint_type'].enum_items[item.constraint_type].icon
+            split.prop(item, 'constraint_type', text='', toggle=False, slider=True, icon=icon)
         elif item.line_type == 'CONSTRAINT_IGNORE':
-            split.prop(item, 'constraint_type', text='', toggle=False, slider=True, icon='ALIGN_LEFT')
+            icon = item.bl_rna.properties['constraint_type'].enum_items[item.constraint_type].icon
+            split.prop(item, 'constraint_type', text='', toggle=False, slider=True, icon=icon)
 
     def invoke(self, context, event):
         pass
