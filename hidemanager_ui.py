@@ -83,8 +83,7 @@ class HIDEMANAGER_UL_GroupItems(UIList):
         split.label(text=str(index + 1) + '.')
         split = split.split(factor=0.25, align=True)
         split.prop(item, 'group_name', text='', toggle=False, slider=True, emboss=False)
-
-        split.prop(item, 'group', text='', toggle=False, slider=True)
+        split.prop(item, 'group', text='', toggle=False, slider=True, icon_value=icons['ID'].icon_id)
 
     def invoke(self, context, event):
         pass

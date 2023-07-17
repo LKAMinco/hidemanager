@@ -15,7 +15,8 @@ icons_files = ['IGNORE',
                'MODIFIER_IGNORE',
                'VERTEX_GROUP_IGNORE',
                'SHAPE_KEY_IGNORE',
-               'CONSTRAINT_IGNORE']
+               'CONSTRAINT_IGNORE',
+               'ID']
 
 for icon in icons_files:
     icons.load(
