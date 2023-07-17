@@ -130,14 +130,17 @@ class HIDEMANAGER_PT_List(Panel):
         priority = scene.hidemanager_priority
         selected = scene.hidemanager_only_active
 
-        if not selected and not priority:
-            row.label(text='!!! ALL ENABLED FILTERS, IGNORE FILTERS FIRST, THEN OTHER FILTERS !!!')
-        elif not selected and priority:
-            row.label(text='!!! ALL ENABLED FILTERS, FILTERS IN ORDER THAT ARE SPECIFIED !!!')
-        elif selected and not priority:
+        if selected:
             row.label(text='!!! ONLY SELECTED FILTER !!!')
-        elif selected and priority:
-            row.label(text='!!! ONLY SELECTED FILTER !!!')
+        else:
+            row.label(text='!!! ALL ENABLED FILTERS !!!')
+
+        row = col.row(align=True)
+
+        if priority:
+            row.label(text='!!! IGNORE FILTERS FIRST, THEN OTHER FILTERS !!!')
+        else:
+            row.label(text='!!! FILTERS IN ORDER THAT ARE SPECIFIED !!!')
         col.separator()
 
         row = col.row(align=True)
@@ -235,14 +238,17 @@ class HIDEMANAGER_PT_GroupList(Panel):
         order = scene.hidemanager_group_order
         selected = scene.hidemanager_group_only_active
 
-        if not selected and not order:
-            row.label(text='!!! ALL GROUPS, IGNORE FILTERS FIRST, THEN OTHER FILTERS !!!')
-        elif not selected and order:
-            row.label(text='!!! ALL GROUPS, FILTERS IN ORDER THAT ARE SPECIFIED IN GROUPS !!!')
-        elif selected and not order:
-            row.label(text='!!! ONLY SELECTED GROUP, IGNORE FILTERS FIRST THEN OTHER FILTERS !!!')
-        elif selected and order:
-            row.label(text='!!! ONLY SELECTED GROUP, FILTERS IN ORDER THAT ARE SPECIFIED IN GROUP !!!')
+        if selected:
+            row.label(text='!!! ONLY SELECTED GROUP !!!')
+        else:
+            row.label(text='!!! ALL GROUPS !!!')
+
+        row = col.row(align=True)
+
+        if order:
+            row.label(text='!!! FILTERS IN ORDER THAT ARE SPECIFIED IN GROUP !!!')
+        else:
+            row.label(text='!!! IGNORE FILTERS FIRST, THEN OTHER FILTERS !!!')
         col.separator()
 
         row = col.row(align=True)
