@@ -64,6 +64,7 @@ classes = (
     HIDEMANAGER_OT_State,
     HIDEMANAGER_OT_Selected,
     HIDEMANAGER_OT_All,
+    HIDEMANAGER_OT_Force,
     HIDEMANAGER_MT_Menu,
     HIDEMANAGER_AddonPreferences
 )

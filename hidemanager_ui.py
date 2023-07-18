@@ -123,6 +123,13 @@ class HIDEMANAGER_PT_List(Panel):
         row = layout.row()
         col = row.column(align=True)
 
+        row = col.row(align=True)
+        row.label(text='Force object action')
+        row = col.row(align=True)
+        row.operator('hidemanager.force', text='Mark', icon='ADD').action = 'MARK'
+        row.operator('hidemanager.force', text='Unmark', icon='PANEL_CLOSE').action = 'UNMARK'
+        row.operator('hidemanager.force', text='Mark Ignore', icon='REMOVE').action = 'MARK_IGNORE'
+
         col.separator()
         row = col.row(align=True)
 
@@ -327,6 +334,11 @@ class HIDEMANAGER_MT_Menu(Menu):
             box.operator(hdmg_op, text='Enable In Viewports',
                          icon='RESTRICT_VIEW_OFF').operation = 'ENABLE_VIEWPORT'
 
+            row = pie.row(align=True)
+            row.operator('hidemanager.force', text='', icon='ADD').action = 'MARK'
+            row.operator('hidemanager.force', text='', icon='PANEL_CLOSE').action = 'UNMARK'
+            row.operator('hidemanager.force', text='', icon='REMOVE').action = 'MARK_IGNORE'
+
             box = pie.box()
             box.prop(context.scene, 'hidemanager_only_active', text='Use only selected filter')
             box.prop(context.scene, 'hidemanager_priority', text='Use filter priority')
@@ -353,6 +365,11 @@ class HIDEMANAGER_MT_Menu(Menu):
                          icon='RESTRICT_VIEW_ON').operation = 'DISABLE_VIEWPORT'
             box.operator(hdmg_op, text='Enable In Viewports',
                          icon='RESTRICT_VIEW_OFF').operation = 'ENABLE_VIEWPORT'
+
+            row = pie.row(align=True)
+            row.operator('hidemanager.force', text='', icon='ADD').action = 'MARK'
+            row.operator('hidemanager.force', text='', icon='PANEL_CLOSE').action = 'UNMARK'
+            row.operator('hidemanager.force', text='', icon='REMOVE').action = 'MARK_IGNORE'
 
             box = pie.box()
             box.prop(context.scene, 'hidemanager_only_active', text='Use only selected filter')

@@ -1,8 +1,47 @@
 import logging
 
 import bpy
-from bpy.props import EnumProperty, BoolProperty
+from bpy.props import EnumProperty, BoolProperty, StringProperty
 from bpy.types import Operator
+
+
+class HIDEMANAGER_OT_Force(Operator):
+    bl_idname = 'hidemanager.force'
+    bl_label = 'Force Action On Objects'
+    bl_description = ''
+    bl_options = {'REGISTER'}
+
+    action: EnumProperty(default='MARK', items=[
+        ('MARK', 'Mark', 'Mark objects'),
+        ('UNMARK', 'Unmark', 'Unmark objects'),
+        ('MARK_IGNORE', 'Mark Ignore', 'Mark objects as ignore'),
+    ])
+
+    @classmethod
+    def description(cls, context, properties):
+        if properties.action == 'MARK':
+            return 'Force action to be performed on selected objects'
+        elif properties.action == 'UNMARK':
+            return 'Remove force from selected objects'
+        elif properties.action == 'MARK_IGNORE':
+            return 'Force ignore selected objects'
+
+    def getMark(self):
+        return self['force_state']
+
+    bpy.types.Object.force_state = StringProperty(get=getMark)
+
+    def execute(self, context):
+        scene = context.scene
+        for obj in context.selected_objects:
+            if self.action == 'MARK':
+                obj['force_state'] = 'MARK'
+            elif self.action == 'MARK_IGNORE':
+                obj['force_state'] = 'MARK_IGNORE'
+            elif self.action == 'UNMARK':
+                if 'force_state' in obj.keys():
+                    del obj['force_state']
+        return {'FINISHED'}
 
 
 class HIDEMANAGER_OT_Actions(Operator):
@@ -199,8 +238,10 @@ class HIDEMANAGER_OT_Selected(Operator):
                 self.select = False
                 return {'FINISHED'}
         except IndexError:
-            pass
-
+            for obj in scene.view_layers[0].objects:
+                if 'force_state' in obj.keys():
+                    if obj['force_state'] == 'MARK':
+                        self.objectAction(obj)
         else:
             has_material = ['MESH', 'CURVE', 'SURFACE', 'META', 'FONT', 'VOLUME', 'GPENCIL', 'GREASEPENCIL']
             has_modifier = ['MESH', 'CURVE', 'SURFACE', 'META', 'FONT', 'VOLUME', 'GPENCIL', 'GREASEPENCIL', 'LATTICE']
@@ -213,6 +254,15 @@ class HIDEMANAGER_OT_Selected(Operator):
 
                 if obj in already_checked:
                     continue
+
+                if 'force_state' in obj.keys():
+                    if obj['force_state'] == 'MARK':
+                        self.objectAction(obj)
+                        already_checked.append(obj)
+                        continue
+                    elif obj['force_state'] == 'MARK_IGNORE':
+                        already_checked.append(obj)
+                        continue
 
                 if item.line_type == 'CONTAINS':
                     if item.contains == '':
@@ -408,6 +458,14 @@ class Filters:
     already_checked = None
 
     def execFilters(self, obj):
+        if 'force_state' in obj.keys():
+            if obj['force_state'] == 'MARK':
+                self.objectAction(obj)
+                self.already_checked.append(obj)
+            elif obj['force_state'] == 'MARK_IGNORE':
+                self.already_checked.append(obj)
+            return
+
         for filter in self.filters:
             filter_exec = getattr(self, filter.type)
             res = filter_exec(obj, filter.value)
@@ -624,6 +682,14 @@ class FiltersIgnore(Filters):
     operation = ''
 
     def execFilters(self, obj):
+        if 'force_state' in obj.keys():
+            if obj['force_state'] == 'MARK':
+                self.objectAction(obj)
+                self.already_checked.append(obj)
+            elif obj['force_state'] == 'MARK_IGNORE':
+                self.already_checked.append(obj)
+            return
+
         for filter in self.filters:
             filter_exec = getattr(self, filter.type)
             res = filter_exec(obj, filter.value)
@@ -702,6 +768,10 @@ class HIDEMANAGER_OT_All(Operator):
     def execute(self, context):
         scene = context.scene
         if len(scene.hidemanager) == 0:
+            for obj in scene.view_layers[0].objects:
+                if 'force_state' in obj.keys():
+                    if obj['force_state'] == 'MARK':
+                        self.objectAction(obj)
             return {'FINISHED'}
 
         self.clear()
@@ -764,6 +834,30 @@ class HIDEMANAGER_OT_All(Operator):
                 self.getLines(item, scene.hidemanager_priority)
 
         self.group = False
+
+    def objectAction(self, obj: bpy.types.Object) -> None:
+        """Performs the action selected in the enum
+
+        :param bpy.types.Object obj: Object to be affected by operation
+        :return: None
+        """
+
+        if self.operation == 'SELECT':
+            obj.select_set(True)
+        elif self.operation == 'DESELECT':
+            obj.select_set(False)
+        elif self.operation == 'HIDE':
+            obj.hide_set(True)
+        elif self.operation == 'SHOW':
+            obj.hide_set(False)
+        elif self.operation == 'ENABLE_RENDER':
+            obj.hide_render = False
+        elif self.operation == 'DISABLE_RENDER':
+            obj.hide_render = True
+        elif self.operation == 'ENABLE_VIEWPORT':
+            obj.hide_viewport = False
+        elif self.operation == 'DISABLE_VIEWPORT':
+            obj.hide_viewport = True
 
     def getLines(self, item, priority):
         if item.line_type == 'CONTAINS':
