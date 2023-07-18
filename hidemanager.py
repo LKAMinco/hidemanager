@@ -3,6 +3,7 @@ import logging
 import bpy
 from bpy.props import EnumProperty, BoolProperty, StringProperty
 from bpy.types import Operator
+from .hidemanager_utils import *
 
 
 class HIDEMANAGER_OT_Force(Operator):
@@ -235,18 +236,11 @@ class HIDEMANAGER_OT_Selected(Operator):
         try:
             item = scene.hidemanager[index]
             if not item.line_enable:
-                self.select = False
+                self.forceOperation(scene)
                 return {'FINISHED'}
         except IndexError:
-            for obj in scene.view_layers[0].objects:
-                if 'force_state' in obj.keys():
-                    if obj['force_state'] == 'MARK':
-                        self.objectAction(obj)
+            self.forceOperation(scene)
         else:
-            has_material = ['MESH', 'CURVE', 'SURFACE', 'META', 'FONT', 'VOLUME', 'GPENCIL', 'GREASEPENCIL']
-            has_modifier = ['MESH', 'CURVE', 'SURFACE', 'META', 'FONT', 'VOLUME', 'GPENCIL', 'GREASEPENCIL', 'LATTICE']
-            has_vertex_group = ['MESH', 'LATTICE']
-            has_shape_key = ['MESH', 'CURVE', 'SURFACE', 'LATTICE']
             already_checked = []
 
             for obj in scene.view_layers[0].objects:
@@ -257,7 +251,7 @@ class HIDEMANAGER_OT_Selected(Operator):
 
                 if 'force_state' in obj.keys():
                     if obj['force_state'] == 'MARK':
-                        self.objectAction(obj)
+                        objectAction(self.operation, obj)
                         already_checked.append(obj)
                         continue
                     elif obj['force_state'] == 'MARK_IGNORE':
@@ -268,37 +262,37 @@ class HIDEMANAGER_OT_Selected(Operator):
                     if item.contains == '':
                         break
                     if item.contains in obj.name:
-                        self.objectAction(obj)
+                        objectAction(self.operation, obj)
 
                 elif item.line_type == "IGNORE":
                     if item.contains == '':
                         break
                     if item.contains not in obj.name:
-                        self.objectAction(obj)
+                        objectAction(self.operation, obj)
 
                 elif item.line_type == 'TYPE':
                     if obj.type == item.object_type:
-                        self.objectAction(obj)
+                        objectAction(self.operation, obj)
 
                 elif item.line_type == 'TYPE_IGNORE':
                     if obj.type != item.object_type:
-                        self.objectAction(obj)
+                        objectAction(self.operation, obj)
 
                 elif item.line_type == 'HIERARCHY':
                     if item.object is None:
                         break
                     if obj is item.object:
-                        self.objectAction(obj)
+                        objectAction(self.operation, obj)
                         already_checked.append(obj)
                         for child in obj.children_recursive:
-                            self.objectAction(child)
+                            objectAction(self.operation, child)
                             already_checked.append(child)
 
                 elif item.line_type == 'HIERARCHY_IGNORE':
                     if item.object is None:
                         break
                     if obj is not item.object:
-                        self.objectAction(obj)
+                        objectAction(self.operation, obj)
                     else:
                         for child in obj.children_recursive:
                             already_checked.append(child)
@@ -307,20 +301,20 @@ class HIDEMANAGER_OT_Selected(Operator):
                     if item.collection is None:
                         break
                     if item.collection in obj.users_collection:
-                        self.objectAction(obj)
+                        objectAction(self.operation, obj)
 
                 elif item.line_type == 'COLLECTION_IGNORE':
                     if item.collection is None:
                         break
                     if item.collection not in obj.users_collection:
-                        self.objectAction(obj)
+                        objectAction(self.operation, obj)
 
                 elif item.line_type == 'MATERIAL':
                     if obj.type in has_material:
                         if item.material is None:
                             break
                         if item.material.name in obj.data.materials:
-                            self.objectAction(obj)
+                            objectAction(self.operation, obj)
 
                 elif item.line_type == 'MATERIAL_CONTAINS':
                     if obj.type in has_material:
@@ -328,20 +322,20 @@ class HIDEMANAGER_OT_Selected(Operator):
                             break
                         for mat in obj.data.materials:
                             if item.contains in mat.name:
-                                self.objectAction(obj)
+                                objectAction(self.operation, obj)
 
                 elif item.line_type == 'MATERIAL_IGNORE':
                     if obj.type in has_material:
                         if item.material is None:
                             break
                         if item.material.name not in obj.data.materials:
-                            self.objectAction(obj)
+                            objectAction(self.operation, obj)
 
                 elif item.line_type == 'MODIFIER':
                     if obj.type in has_modifier:
                         for mod in obj.modifiers:
                             if mod.type == item.modifier_type:
-                                self.objectAction(obj)
+                                objectAction(self.operation, obj)
 
                 elif item.line_type == 'MODIFIER_CONTAINS':
                     if item.contains == '':
@@ -349,13 +343,13 @@ class HIDEMANAGER_OT_Selected(Operator):
                     if obj.type in has_modifier:
                         for mod in obj.modifiers:
                             if item.contains in mod.name:
-                                self.objectAction(obj)
+                                objectAction(self.operation, obj)
 
                 elif item.line_type == 'MODIFIER_IGNORE':
                     if obj.type in has_modifier:
                         mod_types = [mod.type for mod in obj.modifiers]
                         if item.modifier_type not in mod_types:
-                            self.objectAction(obj)
+                            objectAction(self.operation, obj)
 
                 elif item.line_type == 'VERTEX_GROUP_CONTAINS':
                     if item.contains == '':
@@ -363,7 +357,7 @@ class HIDEMANAGER_OT_Selected(Operator):
                     if obj.type in has_vertex_group:
                         for vg in obj.vertex_groups:
                             if item.contains in vg.name:
-                                self.objectAction(obj)
+                                objectAction(self.operation, obj)
 
                 elif item.line_type == 'VERTEX_GROUP_IGNORE':
                     if item.contains == '':
@@ -373,7 +367,7 @@ class HIDEMANAGER_OT_Selected(Operator):
                             if item.contains in vg.name:
                                 skip = True
                         if not skip:
-                            self.objectAction(obj)
+                            objectAction(self.operation, obj)
 
                 elif item.line_type == 'SHAPE_KEY_CONTAINS':
                     if item.contains == '':
@@ -382,7 +376,7 @@ class HIDEMANAGER_OT_Selected(Operator):
                         if obj.data.shape_keys is not None:
                             for sk in obj.data.shape_keys.key_blocks:
                                 if item.contains in sk.name:
-                                    self.objectAction(obj)
+                                    objectAction(self.operation, obj)
 
                 elif item.line_type == 'SHAPE_KEY_IGNORE':
                     if item.contains == '':
@@ -393,45 +387,27 @@ class HIDEMANAGER_OT_Selected(Operator):
                                 if item.contains in sk.name:
                                     skip = True
                             if not skip:
-                                self.objectAction(obj)
+                                objectAction(self.operation, obj)
                         else:
-                            self.objectAction(obj)
+                            objectAction(self.operation, obj)
 
                 elif item.line_type == 'CONSTRAINT':
                     for con in obj.constraints:
                         if con.type == item.constraint_type:
-                            self.objectAction(obj)
+                            objectAction(self.operation, obj)
 
                 elif item.line_type == 'CONSTRAINT_IGNORE':
                     con_types = [con.type for con in obj.constraints]
                     if item.constraint_type not in con_types:
-                        self.objectAction(obj)
+                        objectAction(self.operation, obj)
 
         return {'FINISHED'}
 
-    def objectAction(self, obj: bpy.types.Object) -> None:
-        """Performs the action selected in the enum
-
-        :param bpy.types.Object obj: Object to be affected by operation
-        :return: None
-        """
-
-        if self.operation == 'SELECT':
-            obj.select_set(True)
-        elif self.operation == 'DESELECT':
-            obj.select_set(False)
-        elif self.operation == 'HIDE':
-            obj.hide_set(True)
-        elif self.operation == 'SHOW':
-            obj.hide_set(False)
-        elif self.operation == 'ENABLE_RENDER':
-            obj.hide_render = False
-        elif self.operation == 'DISABLE_RENDER':
-            obj.hide_render = True
-        elif self.operation == 'ENABLE_VIEWPORT':
-            obj.hide_viewport = False
-        elif self.operation == 'DISABLE_VIEWPORT':
-            obj.hide_viewport = True
+    def forceOperation(self, scene):
+        for obj in scene.view_layers[0].objects:
+            if 'force_state' in obj.keys():
+                if obj['force_state'] == 'MARK':
+                    objectAction(self.operation, obj)
 
 
 class Filter:
@@ -450,17 +426,13 @@ class Filters:
     non_ignorable_count = 0
     priority = ['HIERARCHY', 'TYPE', 'CONTAINS', 'CONSTRAINT', 'COLLECTION', 'MODIFIER', 'MODIFIER_CONTAINS',
                 'MATERIAL', 'MATERIAL_CONTAINS', 'VERTEX_GROUP_CONTAINS', 'SHAPE_KEY_CONTAINS']
-    has_material = ['MESH', 'CURVE', 'SURFACE', 'META', 'FONT', 'VOLUME', 'GPENCIL', 'GREASEPENCIL']
-    has_modifier = ['MESH', 'CURVE', 'SURFACE', 'META', 'FONT', 'VOLUME', 'GPENCIL', 'GREASEPENCIL', 'LATTICE']
-    has_vertex_group = ['MESH', 'LATTICE']
-    has_shape_key = ['MESH', 'CURVE', 'SURFACE', 'LATTICE']
     operation = ''
     already_checked = None
 
     def execFilters(self, obj):
         if 'force_state' in obj.keys():
             if obj['force_state'] == 'MARK':
-                self.objectAction(obj)
+                objectAction(self.operation, obj)
                 self.already_checked.append(obj)
             elif obj['force_state'] == 'MARK_IGNORE':
                 self.already_checked.append(obj)
@@ -473,7 +445,7 @@ class Filters:
                 self.already_checked.append(obj.name)
                 return
         if self.non_ignorable_count == 0:
-            self.objectAction(obj)
+            objectAction(self.operation, obj)
 
         self.already_checked.append(obj.name)
 
@@ -495,33 +467,9 @@ class Filters:
     def sortByFastestPriority(self):
         self.filters.sort(key=lambda x: self.priority.index(x.type))
 
-    def objectAction(self, obj: bpy.types.Object) -> None:
-        """Performs the action selected in the enum
-
-        :param bpy.types.Object obj: Object to be affected by operation
-        :return: None
-        """
-
-        if self.operation == 'SELECT':
-            obj.select_set(True)
-        elif self.operation == 'DESELECT':
-            obj.select_set(False)
-        elif self.operation == 'HIDE':
-            obj.hide_set(True)
-        elif self.operation == 'SHOW':
-            obj.hide_set(False)
-        elif self.operation == 'ENABLE_RENDER':
-            obj.hide_render = False
-        elif self.operation == 'DISABLE_RENDER':
-            obj.hide_render = True
-        elif self.operation == 'ENABLE_VIEWPORT':
-            obj.hide_viewport = False
-        elif self.operation == 'DISABLE_VIEWPORT':
-            obj.hide_viewport = True
-
     def CONTAINS(self, obj, value):
         if value in obj.name:
-            self.objectAction(obj)
+            objectAction(self.operation, obj)
             return True
         return False
 
@@ -537,7 +485,7 @@ class Filters:
 
     def TYPE(self, obj, value):
         if obj.type == value:
-            self.objectAction(obj)
+            objectAction(self.operation, obj)
             return True
         return False
 
@@ -557,7 +505,7 @@ class Filters:
 
     def HIERARCHY(self, obj, value):
         if self.HIERARCHY_CHECK(obj, value):
-            self.objectAction(obj)
+            objectAction(self.operation, obj)
             return True
         return False
 
@@ -573,7 +521,7 @@ class Filters:
 
     def COLLECTION(self, obj, value):
         if value in obj.users_collection:
-            self.objectAction(obj)
+            objectAction(self.operation, obj)
             return True
         return False
 
@@ -583,75 +531,75 @@ class Filters:
         return False
 
     def MATERIAL(self, obj, value):
-        if obj.type in self.has_material:
+        if obj.type in has_material:
             if value in obj.data.materials:
-                self.objectAction(obj)
+                objectAction(self.operation, obj)
                 return True
         return False
 
     def MATERIAL_CONTAINS(self, obj, value):
-        if obj.type in self.has_material:
+        if obj.type in has_material:
             for mat in obj.data.materials:
                 if value in mat.name:
-                    self.objectAction(obj)
+                    objectAction(self.operation, obj)
                     return True
         return False
 
     def MATERIAL_IGNORE(self, obj, value):
-        if obj.type in self.has_material:
+        if obj.type in has_material:
             if value in obj.data.materials:
                 return True
         return False
 
     def MODIFIER(self, obj, value):
-        if obj.type in self.has_modifier:
+        if obj.type in has_modifier:
             for mod in obj.modifiers:
                 if value == mod.type:
-                    self.objectAction(obj)
+                    objectAction(self.operation, obj)
                     return True
         return False
 
     def MODIFIER_CONTAINS(self, obj, value):
-        if obj.type in self.has_modifier:
+        if obj.type in has_modifier:
             for mod in obj.modifiers:
                 if value in mod.name:
-                    self.objectAction(obj)
+                    objectAction(self.operation, obj)
                     return True
         return False
 
     def MODIFIER_IGNORE(self, obj, value):
-        if obj.type in self.has_modifier:
+        if obj.type in has_modifier:
             for mod in obj.modifiers:
                 if value == mod.type:
                     return True
         return False
 
     def VERTEX_GROUP_CONTAINS(self, obj, value):
-        if obj.type in self.has_vertex_group:
+        if obj.type in has_vertex_group:
             for vg in obj.vertex_groups:
                 if value in vg.name:
-                    self.objectAction(obj)
+                    objectAction(self.operation, obj)
                     return True
         return False
 
     def VERTEX_GROUP_IGNORE(self, obj, value):
-        if obj.type in self.has_vertex_group:
+        if obj.type in has_vertex_group:
             for vg in obj.vertex_groups:
                 if value in vg.name:
                     return True
         return False
 
     def SHAPE_KEY_CONTAINS(self, obj, value):
-        if obj.type in self.has_shape_key:
+        if obj.type in has_shape_key:
             if obj.data.shape_keys is not None:
                 for sk in obj.data.shape_keys.key_blocks:
                     if value in sk.name:
-                        self.objectAction(obj)
+                        objectAction(self.operation, obj)
                         return True
         return False
 
     def SHAPE_KEY_IGNORE(self, obj, value):
-        if obj.type in self.has_shape_key:
+        if obj.type in has_shape_key:
             if obj.data.shape_keys is not None:
                 for sk in obj.data.shape_keys.key_blocks:
                     if value in sk.name:
@@ -659,18 +607,16 @@ class Filters:
         return False
 
     def CONSTRAINT(self, obj, value):
-        if obj.type in self.has_constraint:
-            for con in obj.constraints:
-                if value == con.type:
-                    self.objectAction(obj)
-                    return True
+        for con in obj.constraints:
+            if value == con.type:
+                objectAction(self.operation, obj)
+                return True
         return False
 
     def CONSTRAINT_IGNORE(self, obj, value):
-        if obj.type in self.has_constraint:
-            for con in obj.constraints:
-                if value == con.type:
-                    return True
+        for con in obj.constraints:
+            if value == con.type:
+                return True
         return False
 
 
@@ -680,11 +626,12 @@ class FiltersIgnore(Filters):
                 'MODIFIER_IGNORE', 'MATERIAL_IGNORE', 'VERTEX_GROUP_IGNORE', 'SHAPE_KEY_IGNORE']
     already_checked = None
     operation = ''
+    non_ignorable_count = 0
 
     def execFilters(self, obj):
         if 'force_state' in obj.keys():
             if obj['force_state'] == 'MARK':
-                self.objectAction(obj)
+                objectAction(self.operation, obj)
                 self.already_checked.append(obj)
             elif obj['force_state'] == 'MARK_IGNORE':
                 self.already_checked.append(obj)
@@ -698,7 +645,7 @@ class FiltersIgnore(Filters):
                 return
 
         if self.non_ignorable_count == 0:
-            self.objectAction(obj)
+            objectAction(self.operation, obj)
 
     def sortByFastestPriority(self):
         self.filters.sort(key=lambda x: self.priority.index(x.type))
@@ -771,7 +718,7 @@ class HIDEMANAGER_OT_All(Operator):
             for obj in scene.view_layers[0].objects:
                 if 'force_state' in obj.keys():
                     if obj['force_state'] == 'MARK':
-                        self.objectAction(obj)
+                        objectAction(self.operation, obj)
             return {'FINISHED'}
 
         self.clear()
@@ -783,6 +730,7 @@ class HIDEMANAGER_OT_All(Operator):
         if not self.filters.use_priority:
             self.filters_ignore.already_checked = self.already_checked
             self.filters_ignore.operation = self.operation
+            self.filters_ignore.non_ignorable_count = self.filters.non_ignorable_count
 
         if not self.filters.use_priority:
             self.filters.sortByFastestPriority()
@@ -834,30 +782,6 @@ class HIDEMANAGER_OT_All(Operator):
                 self.getLines(item, scene.hidemanager_priority)
 
         self.group = False
-
-    def objectAction(self, obj: bpy.types.Object) -> None:
-        """Performs the action selected in the enum
-
-        :param bpy.types.Object obj: Object to be affected by operation
-        :return: None
-        """
-
-        if self.operation == 'SELECT':
-            obj.select_set(True)
-        elif self.operation == 'DESELECT':
-            obj.select_set(False)
-        elif self.operation == 'HIDE':
-            obj.hide_set(True)
-        elif self.operation == 'SHOW':
-            obj.hide_set(False)
-        elif self.operation == 'ENABLE_RENDER':
-            obj.hide_render = False
-        elif self.operation == 'DISABLE_RENDER':
-            obj.hide_render = True
-        elif self.operation == 'ENABLE_VIEWPORT':
-            obj.hide_viewport = False
-        elif self.operation == 'DISABLE_VIEWPORT':
-            obj.hide_viewport = True
 
     def getLines(self, item, priority):
         if item.line_type == 'CONTAINS':

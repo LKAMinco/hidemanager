@@ -3,7 +3,7 @@ import logging
 import bpy
 from bpy.props import EnumProperty, StringProperty, BoolProperty, PointerProperty
 from bpy.types import PropertyGroup, Modifier, GpencilModifier, Constraint
-from .icons import icons
+from . icons import icons
 
 
 # TODO implement not implemented filters

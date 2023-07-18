@@ -3,7 +3,7 @@ import logging
 import bpy
 from bpy.props import EnumProperty, StringProperty
 from bpy.types import PropertyGroup, UIList, Panel, Menu
-from .icons import icons
+from . icons import icons
 
 
 class HIDEMANAGER_UL_Items(UIList):
@@ -313,64 +313,41 @@ class HIDEMANAGER_MT_Menu(Menu):
         pie = self.layout.menu_pie()
         if context.scene.hidemanager_only_active:
             hdmg_op = 'hidemanager.selected'
-            box = pie.box()
-            box.operator(hdmg_op, text='Select Objects', icon='RESTRICT_SELECT_OFF').operation = 'SELECT'
-            box.operator(hdmg_op, text='Deselect Objects',
-                         icon='RESTRICT_SELECT_ON').operation = 'DESELECT'
-
-            box = pie.box()
-            box.operator(hdmg_op, text='Hide Objects', icon='HIDE_ON').operation = 'HIDE'
-            box.operator(hdmg_op, text='Show Objects', icon='HIDE_OFF').operation = 'SHOW'
-
-            box = pie.box()
-            box.operator(hdmg_op, text='Disable In Renders',
-                         icon='RESTRICT_RENDER_ON').operation = 'DISABLE_RENDER'
-            box.operator(hdmg_op, text='Enable In Renders',
-                         icon='RESTRICT_RENDER_OFF').operation = 'ENABLE_RENDER'
-
-            box = pie.box()
-            box.operator(hdmg_op, text='Disable In Viewports',
-                         icon='RESTRICT_VIEW_ON').operation = 'DISABLE_VIEWPORT'
-            box.operator(hdmg_op, text='Enable In Viewports',
-                         icon='RESTRICT_VIEW_OFF').operation = 'ENABLE_VIEWPORT'
-
-            row = pie.row(align=True)
-            row.operator('hidemanager.force', text='', icon='ADD').action = 'MARK'
-            row.operator('hidemanager.force', text='', icon='PANEL_CLOSE').action = 'UNMARK'
-            row.operator('hidemanager.force', text='', icon='REMOVE').action = 'MARK_IGNORE'
-
-            box = pie.box()
-            box.prop(context.scene, 'hidemanager_only_active', text='Use only selected filter')
-            box.prop(context.scene, 'hidemanager_priority', text='Use filter priority')
-
         else:
             hdmg_op = 'hidemanager.all'
+
+        if context.scene.hidemanager_use_select:
             box = pie.box()
             box.operator(hdmg_op, text='Select Objects', icon='RESTRICT_SELECT_OFF').operation = 'SELECT'
             box.operator(hdmg_op, text='Deselect Objects',
                          icon='RESTRICT_SELECT_ON').operation = 'DESELECT'
 
+        if context.scene.hidemanager_use_hide:
             box = pie.box()
             box.operator(hdmg_op, text='Hide Objects', icon='HIDE_ON').operation = 'HIDE'
             box.operator(hdmg_op, text='Show Objects', icon='HIDE_OFF').operation = 'SHOW'
 
+        if context.scene.hidemanager_use_render:
             box = pie.box()
             box.operator(hdmg_op, text='Disable In Renders',
                          icon='RESTRICT_RENDER_ON').operation = 'DISABLE_RENDER'
             box.operator(hdmg_op, text='Enable In Renders',
                          icon='RESTRICT_RENDER_OFF').operation = 'ENABLE_RENDER'
 
+        if context.scene.hidemanager_use_viewport:
             box = pie.box()
             box.operator(hdmg_op, text='Disable In Viewports',
                          icon='RESTRICT_VIEW_ON').operation = 'DISABLE_VIEWPORT'
             box.operator(hdmg_op, text='Enable In Viewports',
                          icon='RESTRICT_VIEW_OFF').operation = 'ENABLE_VIEWPORT'
 
+        if context.scene.hidemanager_use_force:
             row = pie.row(align=True)
             row.operator('hidemanager.force', text='', icon='ADD').action = 'MARK'
             row.operator('hidemanager.force', text='', icon='PANEL_CLOSE').action = 'UNMARK'
             row.operator('hidemanager.force', text='', icon='REMOVE').action = 'MARK_IGNORE'
 
+        if context.scene.hidemanager_use_settings:
             box = pie.box()
             box.prop(context.scene, 'hidemanager_only_active', text='Use only selected filter')
             box.prop(context.scene, 'hidemanager_priority', text='Use filter priority')
