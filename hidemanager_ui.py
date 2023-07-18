@@ -306,32 +306,54 @@ class HIDEMANAGER_MT_Menu(Menu):
         pie = self.layout.menu_pie()
         if context.scene.hidemanager_only_active:
             hdmg_op = 'hidemanager.selected'
-            pie.operator(hdmg_op, text='Select Objects', icon='RESTRICT_SELECT_OFF').operation = 'SELECT'
-            pie.operator(hdmg_op, text='Deselect Objects',
+            box = pie.box()
+            box.operator(hdmg_op, text='Select Objects', icon='RESTRICT_SELECT_OFF').operation = 'SELECT'
+            box.operator(hdmg_op, text='Deselect Objects',
                          icon='RESTRICT_SELECT_ON').operation = 'DESELECT'
-            pie.operator(hdmg_op, text='Hide Objects', icon='HIDE_ON').operation = 'HIDE'
-            pie.operator(hdmg_op, text='Show Objects', icon='HIDE_OFF').operation = 'SHOW'
-            pie.operator(hdmg_op, text='Disable In Renders',
+
+            box = pie.box()
+            box.operator(hdmg_op, text='Hide Objects', icon='HIDE_ON').operation = 'HIDE'
+            box.operator(hdmg_op, text='Show Objects', icon='HIDE_OFF').operation = 'SHOW'
+
+            box = pie.box()
+            box.operator(hdmg_op, text='Disable In Renders',
                          icon='RESTRICT_RENDER_ON').operation = 'DISABLE_RENDER'
-            pie.operator(hdmg_op, text='Enable In Renders',
+            box.operator(hdmg_op, text='Enable In Renders',
                          icon='RESTRICT_RENDER_OFF').operation = 'ENABLE_RENDER'
-            pie.operator(hdmg_op, text='Disable In Viewports',
+
+            box = pie.box()
+            box.operator(hdmg_op, text='Disable In Viewports',
                          icon='RESTRICT_VIEW_ON').operation = 'DISABLE_VIEWPORT'
-            pie.operator(hdmg_op, text='Enable In Viewports',
+            box.operator(hdmg_op, text='Enable In Viewports',
                          icon='RESTRICT_VIEW_OFF').operation = 'ENABLE_VIEWPORT'
+
+            box = pie.box()
+            box.prop(context.scene, 'hidemanager_only_active', text='Use only selected filter')
+            box.prop(context.scene, 'hidemanager_priority', text='Use filter priority')
 
         else:
             hdmg_op = 'hidemanager.all'
-            pie.operator(hdmg_op, text='Select Objects', icon='RESTRICT_SELECT_OFF').operation = 'SELECT'
-            pie.operator(hdmg_op, text='Deselect Objects',
+            box = pie.box()
+            box.operator(hdmg_op, text='Select Objects', icon='RESTRICT_SELECT_OFF').operation = 'SELECT'
+            box.operator(hdmg_op, text='Deselect Objects',
                          icon='RESTRICT_SELECT_ON').operation = 'DESELECT'
-            pie.operator(hdmg_op, text='Hide Objects', icon='HIDE_ON').operation = 'HIDE'
-            pie.operator(hdmg_op, text='Show Objects', icon='HIDE_OFF').operation = 'SHOW'
-            pie.operator(hdmg_op, text='Disable In Renders',
+
+            box = pie.box()
+            box.operator(hdmg_op, text='Hide Objects', icon='HIDE_ON').operation = 'HIDE'
+            box.operator(hdmg_op, text='Show Objects', icon='HIDE_OFF').operation = 'SHOW'
+
+            box = pie.box()
+            box.operator(hdmg_op, text='Disable In Renders',
                          icon='RESTRICT_RENDER_ON').operation = 'DISABLE_RENDER'
-            pie.operator(hdmg_op, text='Enable In Renders',
+            box.operator(hdmg_op, text='Enable In Renders',
                          icon='RESTRICT_RENDER_OFF').operation = 'ENABLE_RENDER'
-            pie.operator(hdmg_op, text='Disable In Viewports',
+
+            box = pie.box()
+            box.operator(hdmg_op, text='Disable In Viewports',
                          icon='RESTRICT_VIEW_ON').operation = 'DISABLE_VIEWPORT'
-            pie.operator(hdmg_op, text='Enable In Viewports',
+            box.operator(hdmg_op, text='Enable In Viewports',
                          icon='RESTRICT_VIEW_OFF').operation = 'ENABLE_VIEWPORT'
+
+            box = pie.box()
+            box.prop(context.scene, 'hidemanager_only_active', text='Use only selected filter')
+            box.prop(context.scene, 'hidemanager_priority', text='Use filter priority')

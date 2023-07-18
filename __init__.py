@@ -1,7 +1,11 @@
 import bpy
+from bpy.utils import previews
+
 from .hidemanager import *
 from .hidemanager_ui import *
 from .hidemanager_data import *
+from bpy.types import AddonPreferences
+from .icons import icons
 
 bl_info = {
     "name": "HideManager Pro",
@@ -14,19 +18,29 @@ bl_info = {
     "category": "3D View",
 }
 
-classes = (
-    HIDEMANAGER_PG_CustomCollection,
-    HIDEMANAGER_PT_List,
-    HIDEMANAGER_PT_GroupList,
-    HIDEMANAGER_UL_Items,
-    HIDEMANAGER_UL_GroupItems,
-    HIDEMANAGER_OT_Actions,
-    HIDEMANAGER_OT_GroupActions,
-    HIDEMANAGER_OT_State,
-    HIDEMANAGER_OT_Selected,
-    HIDEMANAGER_OT_All,
-    HIDEMANAGER_MT_Menu
-)
+addon_keymaps = []
+
+
+# Addon preferences
+class HIDEMANAGER_AddonPreferences(AddonPreferences):
+    bl_idname = __name__
+
+    def draw(self, context):
+        row = self.layout.row()
+        wm = bpy.context.window_manager
+        km_items = wm.keyconfigs.addon.keymaps['3D View'].keymap_items
+        km_item = None
+        for km_item_i in km_items:
+            if km_item_i.idname == 'wm.call_menu_pie':
+                if km_item_i.name == 'Hide Manager Pie Menu':
+                    km_item = km_item_i
+                    break
+        if km_item is None:
+            return
+        row = self.layout.row()
+        row.label(text=km_item.name)
+        row.prop(km_item, 'type', text='', full_event=True)
+
 
 bpy.types.Scene.hidemanager_index = bpy.props.IntProperty()
 bpy.types.Scene.hidemanager_only_active = bpy.props.BoolProperty(default=False, name='Only Selected',
@@ -39,7 +53,20 @@ bpy.types.Scene.hidemanager_group_only_active = bpy.props.BoolProperty(default=T
 bpy.types.Scene.hidemanager_group_order = bpy.props.BoolProperty(default=True, name='Use filter order',
                                                                  description='If enabled, filters will be executed in order that are specified in group. If disabled, first will be executed ignore filters and then other')
 
-keymaps = []
+classes = (
+    HIDEMANAGER_PG_CustomCollection,
+    HIDEMANAGER_PT_List,
+    HIDEMANAGER_PT_GroupList,
+    HIDEMANAGER_UL_Items,
+    HIDEMANAGER_UL_GroupItems,
+    HIDEMANAGER_OT_Actions,
+    HIDEMANAGER_OT_GroupActions,
+    HIDEMANAGER_OT_State,
+    HIDEMANAGER_OT_Selected,
+    HIDEMANAGER_OT_All,
+    HIDEMANAGER_MT_Menu,
+    HIDEMANAGER_AddonPreferences
+)
 
 
 def register():
@@ -56,7 +83,7 @@ def register():
     kmi_mnu = km.keymap_items.new("wm.call_menu_pie", "F", "PRESS", ctrl=True, shift=True)
     kmi_mnu.properties.name = HIDEMANAGER_MT_Menu.bl_idname
 
-    keymaps.append((km, kmi_mnu))
+    addon_keymaps.append((km, kmi_mnu))
 
 
 def unregister():
@@ -67,7 +94,9 @@ def unregister():
     del bpy.types.Scene.hidemanager_group
 
     # remove keymap entry
-    for km, kmi in keymaps:
+    for km, kmi in addon_keymaps:
         km.keymap_items.remove(kmi)
 
-    keymaps.clear()
+    addon_keymaps.clear()
+
+    previews.remove(icons)
