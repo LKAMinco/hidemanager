@@ -2,7 +2,7 @@ import logging
 
 import bpy
 from bpy.props import EnumProperty, StringProperty
-from bpy.types import PropertyGroup, UIList, Panel
+from bpy.types import PropertyGroup, UIList, Panel, Menu
 from .icons import icons
 
 
@@ -296,3 +296,42 @@ class HIDEMANAGER_PT_GroupList(Panel):
         op = row.operator(hdmg_op, text='Enable In Viewports', icon='RESTRICT_VIEW_OFF')
         op.operation = 'ENABLE_VIEWPORT'
         op.group = True
+
+
+class HIDEMANAGER_MT_Menu(Menu):
+    bl_idname = 'HIDEMANAGER_MT_Menu'
+    bl_label = 'Hide Manager Pie Menu'
+
+    def draw(self, context):
+        pie = self.layout.menu_pie()
+        if context.scene.hidemanager_only_active:
+            hdmg_op = 'hidemanager.selected'
+            pie.operator(hdmg_op, text='Select Objects', icon='RESTRICT_SELECT_OFF').operation = 'SELECT'
+            pie.operator(hdmg_op, text='Deselect Objects',
+                         icon='RESTRICT_SELECT_ON').operation = 'DESELECT'
+            pie.operator(hdmg_op, text='Hide Objects', icon='HIDE_ON').operation = 'HIDE'
+            pie.operator(hdmg_op, text='Show Objects', icon='HIDE_OFF').operation = 'SHOW'
+            pie.operator(hdmg_op, text='Disable In Renders',
+                         icon='RESTRICT_RENDER_ON').operation = 'DISABLE_RENDER'
+            pie.operator(hdmg_op, text='Enable In Renders',
+                         icon='RESTRICT_RENDER_OFF').operation = 'ENABLE_RENDER'
+            pie.operator(hdmg_op, text='Disable In Viewports',
+                         icon='RESTRICT_VIEW_ON').operation = 'DISABLE_VIEWPORT'
+            pie.operator(hdmg_op, text='Enable In Viewports',
+                         icon='RESTRICT_VIEW_OFF').operation = 'ENABLE_VIEWPORT'
+
+        else:
+            hdmg_op = 'hidemanager.all'
+            pie.operator(hdmg_op, text='Select Objects', icon='RESTRICT_SELECT_OFF').operation = 'SELECT'
+            pie.operator(hdmg_op, text='Deselect Objects',
+                         icon='RESTRICT_SELECT_ON').operation = 'DESELECT'
+            pie.operator(hdmg_op, text='Hide Objects', icon='HIDE_ON').operation = 'HIDE'
+            pie.operator(hdmg_op, text='Show Objects', icon='HIDE_OFF').operation = 'SHOW'
+            pie.operator(hdmg_op, text='Disable In Renders',
+                         icon='RESTRICT_RENDER_ON').operation = 'DISABLE_RENDER'
+            pie.operator(hdmg_op, text='Enable In Renders',
+                         icon='RESTRICT_RENDER_OFF').operation = 'ENABLE_RENDER'
+            pie.operator(hdmg_op, text='Disable In Viewports',
+                         icon='RESTRICT_VIEW_ON').operation = 'DISABLE_VIEWPORT'
+            pie.operator(hdmg_op, text='Enable In Viewports',
+                         icon='RESTRICT_VIEW_OFF').operation = 'ENABLE_VIEWPORT'
