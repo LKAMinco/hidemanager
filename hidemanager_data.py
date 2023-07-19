@@ -3,11 +3,11 @@ import logging
 import bpy
 from bpy.props import EnumProperty, StringProperty, BoolProperty, PointerProperty
 from bpy.types import PropertyGroup, Modifier, GpencilModifier, Constraint
-from . icons import icons
+from .icons import icons
 
 
 # TODO implement not implemented filters
-class HIDEMANAGER_PG_CustomCollection(PropertyGroup):
+class HIDEMANAGER_PG_CustomCollectionFilters(PropertyGroup):
     line_type: EnumProperty(default='CONTAINS', name='Filter type', items=[
         ('', 'Basic Filters', '', '', 0),
         ('CONTAINS', 'Contains', 'Filter will be applied to all objects with filled string in name', 'ALIGN_LEFT', 1),
@@ -98,30 +98,14 @@ class HIDEMANAGER_PG_CustomCollection(PropertyGroup):
 
     contains: StringProperty(default='', name='String in name')
 
-    # contains_ignore: StringProperty(default='', name='String in name',
-    #                                 description='Filter will ignore all objects with this string in name')
-
     line_enable: BoolProperty(default=True, name='Filter active state',
                               description='Enable / Disable filter. In case of disable, filter will be skipped')
 
     material: PointerProperty(type=bpy.types.Material, name='Material')
 
-    # material_ignore: PointerProperty(type=bpy.types.Material, name='Material',
-    #                                  description='Filter will ignore all objects with this material')
-    #
-    # material_contains: StringProperty(default='', name='String in material name',
-    #                                   description='Filter will be applied to all objects with this string in material name')
-
     object: PointerProperty(type=bpy.types.Object, name='Hierarchy of objects')
 
     collection: PointerProperty(type=bpy.types.Collection, name='Collection')
-
-    group: StringProperty(default='', name='Group filters',
-                          description='To make a group, fill this line with numbers (ids of filters from Hide Manager Filters) separated with comma or use range "first_id - last_id". Example: 1,8-10,7,3-5,12'
-                                      '\nGroup filters uses both active and inactive filters from Hide Manager Filters !!!'
-                                      '\nFilters are executed in order that are specified in this line !!!')
-
-    group_name: StringProperty(default='Change me', name='Group name', description='Name of group')
 
     constraint_items = []
     idx = 0
@@ -141,3 +125,32 @@ class HIDEMANAGER_PG_CustomCollection(PropertyGroup):
 
     constraint_type: EnumProperty(default='COPY_LOCATION', name='Constraint Type', description='Type of constraint',
                                   items=constraint_items)
+
+
+class HIDEMAANGER_PG_CustomCollectionGroups(PropertyGroup):
+    group: StringProperty(default='', name='Group filters',
+                          description='To make a group, fill this line with numbers (ids of filters from Hide Manager Filters) separated with comma or use range "first_id - last_id". Example: 1,8-10,7,3-5,12'
+                                      '\nGroup filters uses both active and inactive filters from Hide Manager Filters !!!'
+                                      '\nFilters are executed in order that are specified in this line !!!')
+
+    group_name: StringProperty(default='Change me', name='Group name', description='Name of group')
+
+    line_enable: BoolProperty(default=True, name='Filter active state',
+                              description='Enable / Disable group. In case of disable, group will be skipped')
+
+
+class HIDEMAANGER_PG_CustomCollectionEdit(PropertyGroup):
+    name: StringProperty(default='Change me', name='Name', description='Name of filter')
+
+    line_enable: BoolProperty(default=True, name='Filter active state',
+                              description='Enable / Disable filter. In case of disable, filter will be skipped')
+
+    line_type: EnumProperty(default='VERTEX_GROUP_CONTAINS', name='Filter type', items=[
+        ('MATERIAL', 'Material', 'Filter will be applied to all objects with selected material', 'MATERIAL_DATA', 0),
+        ('MATERIAL_CONTAINS', 'Material Contains', 'Filter will be applied to all objects with material that contains selected string', 'MATERIAL_DATA', 1),
+        ('VERTEX_GROUP_CONTAINS', 'Vertex Group Contains', 'Filter will be applied to all objects with vertex group which contains filled string', 'GROUP_VERTEX', 2),
+    ])
+
+    material: PointerProperty(type=bpy.types.Material, name='Material')
+
+    contains: StringProperty(default='', name='String in name')

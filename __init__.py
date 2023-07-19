@@ -1,11 +1,11 @@
 import bpy
 from bpy.utils import previews
 
-from . hidemanager import *
-from . hidemanager_ui import *
-from . hidemanager_data import *
+from .hidemanager import *
+from .hidemanager_ui import *
+from .hidemanager_data import *
 from bpy.types import AddonPreferences
-from . icons import icons
+from .icons import icons
 
 bl_info = {
     "name": "HideManager Pro",
@@ -41,6 +41,11 @@ class HIDEMANAGER_AddonPreferences(AddonPreferences):
             row = self.layout.box().row()
             row.label(text=km_item.name)
             row.prop(km_item, 'type', text='', full_event=True)
+
+        km_item = km_items['hidemanager.edit_menu_dialog']
+        row = self.layout.box().row()
+        row.label(text=km_item.name)
+        row.prop(km_item, 'type', text='', full_event=True)
 
         box = self.layout.box()
 
@@ -78,6 +83,8 @@ bpy.types.Scene.hidemanager_group_only_active = bpy.props.BoolProperty(default=T
                                                                        description='If enabled, only selected group filter will be executed. If disabled, all group filters will be executed. If order is enabled and selected group disabled, filters will be executed in order that are specified in from lowes enabled group to highest (duplicates are executed also e.g. 3,1,3 -> 3 will be executed as first but after 1 will be executed too)')
 bpy.types.Scene.hidemanager_group_order = bpy.props.BoolProperty(default=True, name='Use filter order',
                                                                  description='If enabled, filters will be executed in order that are specified in group. If disabled, first will be executed ignore filters and then other')
+bpy.types.Scene.hidemanager_edit_index = bpy.props.IntProperty()
+bpy.types.Scene.hidemanager_edit_only_active = bpy.props.BoolProperty(default=True, name='Only Selected', description='If enabled, only selected filter will be executed.')
 bpy.types.Scene.hidemanager_use_hide = bpy.props.BoolProperty(default=True, description='Use Hide / Show operation in Pie Menu')
 bpy.types.Scene.hidemanager_use_select = bpy.props.BoolProperty(default=True, description='Use Select / Deselect operation in Pie Menu')
 bpy.types.Scene.hidemanager_use_render = bpy.props.BoolProperty(default=False, description='Use Disable / Enable in Renders operation in Pie Menu')
@@ -86,18 +93,25 @@ bpy.types.Scene.hidemanager_use_settings = bpy.props.BoolProperty(default=True, 
 bpy.types.Scene.hidemanager_use_force = bpy.props.BoolProperty(default=True, description='Use Force operations in Pie Menu')
 
 classes = (
-    HIDEMANAGER_PG_CustomCollection,
+    HIDEMANAGER_PG_CustomCollectionFilters,
+    HIDEMAANGER_PG_CustomCollectionGroups,
+    HIDEMAANGER_PG_CustomCollectionEdit,
     HIDEMANAGER_PT_List,
     HIDEMANAGER_PT_GroupList,
+    HIDEMANAGER_PT_EditList,
     HIDEMANAGER_UL_Items,
     HIDEMANAGER_UL_GroupItems,
+    HIDEMANAGER_UL_EditItems,
     HIDEMANAGER_OT_Actions,
     HIDEMANAGER_OT_GroupActions,
+    HIDEMANAGER_OT_EditActions,
     HIDEMANAGER_OT_State,
     HIDEMANAGER_OT_Selected,
     HIDEMANAGER_OT_All,
+    HIDEMANAGER_OT_Edit,
     HIDEMANAGER_OT_Force,
     HIDEMANAGER_MT_Menu,
+    HIDEMANAGER_OT_EditMenuDialog,
     HIDEMANAGER_AddonPreferences
 )
 
@@ -106,8 +120,9 @@ def register():
     for cls in classes:
         bpy.utils.register_class(cls)
 
-    bpy.types.Scene.hidemanager = bpy.props.CollectionProperty(type=HIDEMANAGER_PG_CustomCollection)
-    bpy.types.Scene.hidemanager_group = bpy.props.CollectionProperty(type=HIDEMANAGER_PG_CustomCollection)
+    bpy.types.Scene.hidemanager = bpy.props.CollectionProperty(type=HIDEMANAGER_PG_CustomCollectionFilters)
+    bpy.types.Scene.hidemanager_group = bpy.props.CollectionProperty(type=HIDEMAANGER_PG_CustomCollectionGroups)
+    bpy.types.Scene.hidemanager_edit = bpy.props.CollectionProperty(type=HIDEMAANGER_PG_CustomCollectionEdit)
 
     # add keymap entry
     kc = bpy.context.window_manager.keyconfigs.addon
@@ -116,6 +131,9 @@ def register():
     kmi_mnu = km.keymap_items.new("wm.call_menu_pie", "F", "PRESS", ctrl=True, shift=True)
     kmi_mnu.properties.name = HIDEMANAGER_MT_Menu.bl_idname
 
+    addon_keymaps.append((km, kmi_mnu))
+
+    kmi_mnu = km.keymap_items.new("hidemanager.edit_menu_dialog", "D", "PRESS", ctrl=True, shift=True)
     addon_keymaps.append((km, kmi_mnu))
 
 

@@ -149,6 +149,57 @@ class HIDEMANAGER_OT_GroupActions(Operator):
         return {'FINISHED'}
 
 
+class HIDEMANAGER_OT_EditActions(Operator):
+    bl_idname = 'hidemanager_edit.actions'
+    bl_label = ''
+    bl_description = ''
+    bl_options = {'REGISTER'}
+
+    action: EnumProperty(default='ADD', items=[
+        ('ADD', 'Add', 'Create new group of filters'),
+        ('REMOVE', 'Remove', 'Remove selected groups'),
+        ('DOWN', 'Down', 'Move selected group down'),
+        ('UP', 'Up', 'Move selected group up')
+    ])
+
+    @classmethod
+    def description(cls, context, properties):
+        if properties.action == 'ADD':
+            return 'Create new filter'
+        elif properties.action == 'REMOVE':
+            return 'Remove selected filter'
+        elif properties.action == 'DOWN':
+            return 'Move selected filter down'
+        elif properties.action == 'UP':
+            return 'Move selected filter up'
+
+    def invoke(self, context, event):
+        scene = context.scene
+        index = scene.hidemanager_edit_index
+
+        try:
+            item = scene.hidemanager_edit[index]
+        except IndexError:
+            pass
+        else:
+            if self.action == 'REMOVE':
+                scene.hidemanager_edit_index -= 1
+                scene.hidemanager_edit.remove(index)
+            elif self.action == 'DOWN' and index < len(scene.hidemanager_edit) - 1:
+                item_next = scene.hidemanager_edit[index + 1].name
+                scene.hidemanager_edit.move(index, index + 1)
+                scene.hidemanager_edit_index += 1
+                info = 'Item "%s" moved to position %d' % (item.name, scene.hidemanager_edit_index + 1)
+            elif self.action == 'UP' and index >= 1:
+                item_prev = scene.hidemanager_edit[index - 1].name
+                scene.hidemanager_edit.move(index, index - 1)
+                scene.hidemanager_edit_index -= 1
+                info = 'Item "%s" moved to position %d' % (item.name, scene.hidemanager_edit_index + 1)
+        if self.action == 'ADD':
+            item = scene.hidemanager_edit.add()
+        return {'FINISHED'}
+
+
 class HIDEMANAGER_OT_State(Operator):
     bl_idname = 'hidemanager.state'
     bl_label = ''
@@ -162,6 +213,7 @@ class HIDEMANAGER_OT_State(Operator):
     ])
 
     group: BoolProperty(default=False)
+    edit_mode: BoolProperty(default=False)
 
     @classmethod
     def description(cls, context, properties):
@@ -180,6 +232,8 @@ class HIDEMANAGER_OT_State(Operator):
     def execute(self, context):
         if self.group:
             hdmng_context = context.scene.hidemanager_group
+        elif self.edit_mode:
+            hdmng_context = context.scene.hidemanager_edit
         else:
             hdmng_context = context.scene.hidemanager
 
@@ -190,6 +244,8 @@ class HIDEMANAGER_OT_State(Operator):
                 item.line_enable = False
             elif self.action == 'INVERT':
                 item.line_enable = not item.line_enable
+        self.group = False
+        self.edit_mode = False
         return {'FINISHED'}
 
 
@@ -978,3 +1034,121 @@ class HIDEMANAGER_OT_All(Operator):
                             except ValueError:
                                 self.report({'ERROR'}, 'Group id must be a number, group "%s" ignored' % x)
         # self.groups = (list(set(self.groups)))
+
+
+class HIDEMANAGER_OT_Edit(Operator):
+    bl_idname = 'hidemanager.edit'
+    bl_label = ''
+    bl_description = ''
+    bl_options = {'REGISTER'}
+
+    operation: EnumProperty(default='SELECT', items=[
+        ('SELECT', 'Select', 'Select objects by selected filter'),
+        ('DESELECT', 'Deselect', 'Deselect objects by selected filter'),
+        ('HIDE', 'Hide', 'Hide objects by selected filter'),
+        ('SHOW', 'Show', 'Show objects by selected filter'),
+    ])
+
+    @classmethod
+    def description(cls, context, properties):
+        if properties.operation == 'SELECT':
+            return 'Select objects by selected filter'
+        elif properties.operation == 'DESELECT':
+            return 'Deselect objects by selected filter'
+        elif properties.operation == 'HIDE':
+            return 'Hide objects by selected filter'
+        elif properties.operation == 'SHOW':
+            return 'Show objects by selected filter'
+
+    def execute(self, context):
+        scene = context.scene
+        index = scene.hidemanager_edit_index
+        already_checked = []
+
+        if scene.hidemanager_edit_only_active:
+            try:
+                item = scene.hidemanager_edit[index]
+                if not item.line_enable:
+                    return {'FINISHED'}
+            except IndexError:
+                pass
+            else:
+                obj = context.active_object
+                if item.line_type == 'MATERIAL':
+                    self.material(obj, item.material)
+                elif item.line_type == 'MATERIAL_CONTAINS':
+                    self.materialContains(obj, item.contains)
+                elif item.line_type == 'VERTEX_GROUP_CONTAINS':
+                    self.vertexGroupContains(obj, item.contains)
+        else:
+            obj = context.active_object
+            for filter in scene.hidemanager_edit:
+                if not filter.line_enable:
+                    continue
+                if filter.line_type == 'MATERIAL':
+                    self.material(obj, filter.material)
+                elif filter.line_type == 'MATERIAL_CONTAINS':
+                    self.materialContains(obj, filter.contains)
+                elif filter.line_type == 'VERTEX_GROUP_CONTAINS':
+                    self.vertexGroupContains(obj, filter.contains)
+
+        return {'FINISHED'}
+
+    def material(self, obj, material):
+        material_idx = obj.data.materials.find(material.name)
+        if material_idx == -1:
+            return
+        if self.operation == 'SELECT':
+            obj.active_material_index = material_idx
+            bpy.ops.object.material_slot_select()
+        elif self.operation == 'DESELECT':
+            obj.active_material_index = material_idx
+            bpy.ops.object.material_slot_deselect()
+        elif self.operation == 'HIDE':
+            obj.active_material_index = material_idx
+            bpy.ops.object.material_slot_select()
+            bpy.ops.mesh.hide()
+        elif self.operation == 'SHOW':
+            obj.active_material_index = material_idx
+            bpy.ops.object.material_slot_select()
+            bpy.ops.mesh.reveal()
+            bpy.ops.mesh.select_all(action='DESELECT')
+
+    def materialContains(self, obj, contains):
+        for mat in obj.data.materials:
+            if contains in mat.name:
+                material_idx = obj.data.materials.find(mat.name)
+                if self.operation == 'SELECT':
+                    obj.active_material_index = material_idx
+                    bpy.ops.object.material_slot_select()
+                elif self.operation == 'DESELECT':
+                    obj.active_material_index = material_idx
+                    bpy.ops.object.material_slot_deselect()
+                elif self.operation == 'HIDE':
+                    obj.active_material_index = material_idx
+                    bpy.ops.object.material_slot_select()
+                    bpy.ops.mesh.hide()
+                elif self.operation == 'SHOW':
+                    obj.active_material_index = material_idx
+                    bpy.ops.object.material_slot_select()
+                    bpy.ops.mesh.reveal()
+                    bpy.ops.mesh.select_all(action='DESELECT')
+
+    def vertexGroupContains(self, obj, contains):
+        for vgroup in obj.vertex_groups:
+            if contains in vgroup.name:
+                if self.operation == 'SELECT':
+                    obj.vertex_groups.active_index = vgroup.index
+                    bpy.ops.object.vertex_group_select()
+                elif self.operation == 'DESELECT':
+                    obj.vertex_groups.active_index = vgroup.index
+                    bpy.ops.object.vertex_group_deselect()
+                elif self.operation == 'HIDE':
+                    obj.vertex_groups.active_index = vgroup.index
+                    bpy.ops.object.vertex_group_select()
+                    bpy.ops.mesh.hide()
+                elif self.operation == 'SHOW':
+                    obj.vertex_groups.active_index = vgroup.index
+                    bpy.ops.object.vertex_group_select()
+                    bpy.ops.mesh.reveal()
+                    bpy.ops.mesh.select_all(action='DESELECT')
