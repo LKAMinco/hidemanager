@@ -152,6 +152,11 @@ class PanelBase:
 
         row = layout.row()
         col = row.column(align=True)
+        row = col.row(align=True)
+        row.label(text='Apply filter on selection')
+        row = col.row(align=True)
+        row.operator('hidemanager.force', text='Mark', icon='ADD').action = 'MARK'
+        row.operator('hidemanager.force', text='Mark Ignore', icon='REMOVE').action = 'MARK_IGNORE'
         col.separator()
         row = col.row(align=True)
 
@@ -469,12 +474,16 @@ class HIDEMANAGER_MT_Menu(Menu):
                 box.operator(hdmg_op, text='Enable In Viewports',
                              icon='RESTRICT_VIEW_OFF').operation = 'ENABLE_VIEWPORT'
 
-        if not is_edit:
-            if context.scene.hidemanager_use_force:
-                row = pie.row(align=True)
-                row.operator('hidemanager.force', text='', icon='ADD').action = 'MARK'
-                row.operator('hidemanager.force', text='', icon='PANEL_CLOSE').action = 'UNMARK'
-                row.operator('hidemanager.force', text='', icon='REMOVE').action = 'MARK_IGNORE'
+        if context.scene.hidemanager_use_force:
+            if not is_edit:
+                row = pie.box().row(align=True)
+                row.operator('hidemanager.force', text='Mark', icon='ADD').action = 'MARK'
+                row.operator('hidemanager.force', text='Unmark', icon='PANEL_CLOSE').action = 'UNMARK'
+                row.operator('hidemanager.force', text='Mark Ignore', icon='REMOVE').action = 'MARK_IGNORE'
+            else:
+                row = pie.box().row(align=True)
+                row.operator('hidemanager.force', text='Assign', icon='ADD').action = 'MARK'
+                row.operator('hidemanager.force', text='Remove', icon='REMOVE').action = 'MARK_IGNORE'
 
         if not is_edit:
             if context.scene.hidemanager_use_settings:
@@ -482,9 +491,10 @@ class HIDEMANAGER_MT_Menu(Menu):
                 box.prop(context.scene, 'hidemanager_only_active', text='Use only selected filter')
                 box.prop(context.scene, 'hidemanager_priority', text='Use filter priority')
         else:
+            obj = context.active_object
             if context.scene.hidemanager_use_settings:
                 box = pie.box()
-                box.prop(context.scene, 'hidemanager_edit_only_active', text='Use only selected filter')
+                box.prop(obj, 'hidemanager_edit_only_active', text='Use only selected filter')
 
 
 class HIDEMANAGER_OT_EditMenuDialog(Operator, PanelBase):

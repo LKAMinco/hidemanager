@@ -8,7 +8,7 @@ from .hidemanager_utils import *
 
 class HIDEMANAGER_OT_Force(Operator):
     bl_idname = 'hidemanager.force'
-    bl_label = 'Force Action On Objects'
+    bl_label = ''
     bl_description = ''
     bl_options = {'REGISTER'}
 
@@ -20,12 +20,35 @@ class HIDEMANAGER_OT_Force(Operator):
 
     @classmethod
     def description(cls, context, properties):
-        if properties.action == 'MARK':
-            return 'Force action to be performed on selected objects'
-        elif properties.action == 'UNMARK':
-            return 'Remove force from selected objects'
-        elif properties.action == 'MARK_IGNORE':
-            return 'Force ignore selected objects'
+        if context.mode != 'EDIT_MESH':
+            if properties.action == 'MARK':
+                return 'Force action to be performed on selected objects'
+            elif properties.action == 'UNMARK':
+                return 'Remove force from selected objects'
+            elif properties.action == 'MARK_IGNORE':
+                return 'Force ignore selected objects'
+        else:
+            obj = context.active_object
+            index = obj.hidemanager_edit_index
+            try:
+                item = obj.hidemanager_edit[index]
+            except IndexError:
+                pass
+            else:
+                if properties.action == 'MARK':
+                    if item.line_type == 'MATERIAL':
+                        return 'Add selected material on selection'
+                    elif item.line_type == 'MATERIAL_CONTAINS':
+                        return 'Add first material that contains selected string on selection'
+                    elif item.line_type == 'VERTEX_GROUP_CONTAINS':
+                        return 'Add selection to selected vertex groups containing selected string'
+                elif properties.action == 'MARK_IGNORE':
+                    if item.line_type == 'MATERIAL':
+                        return 'Set default (first) material on selection where selected material is used'
+                    elif item.line_type == 'MATERIAL_CONTAINS':
+                        return 'Set default (first) material on selection where first material that contains selected string is used'
+                    elif item.line_type == 'VERTEX_GROUP_CONTAINS':
+                        return 'Remove selection from selected vertex groups containing selected string'
 
     def getMark(self):
         return self['force_state']
@@ -34,14 +57,60 @@ class HIDEMANAGER_OT_Force(Operator):
 
     def execute(self, context):
         scene = context.scene
-        for obj in context.selected_objects:
-            if self.action == 'MARK':
-                obj['force_state'] = 'MARK'
-            elif self.action == 'MARK_IGNORE':
-                obj['force_state'] = 'MARK_IGNORE'
-            elif self.action == 'UNMARK':
-                if 'force_state' in obj.keys():
-                    del obj['force_state']
+        if context.mode != 'EDIT_MESH':
+            for obj in context.selected_objects:
+                if self.action == 'MARK':
+                    obj['force_state'] = 'MARK'
+                elif self.action == 'MARK_IGNORE':
+                    obj['force_state'] = 'MARK_IGNORE'
+                elif self.action == 'UNMARK':
+                    if 'force_state' in obj.keys():
+                        del obj['force_state']
+        else:
+            obj = context.active_object
+            index = obj.hidemanager_edit_index
+            try:
+                item = obj.hidemanager_edit[index]
+            except IndexError:
+                pass
+            else:
+                if item.line_type == 'MATERIAL':
+                    if item.material.name in obj.data.materials:
+                        material_index = obj.data.materials.find(item.material.name)
+                        obj.active_material_index = material_index
+                        if self.action == 'MARK':
+                            bpy.ops.object.material_slot_assign()
+                        elif self.action == 'MARK_IGNORE':
+                            bpy.ops.object.mode_set(mode='OBJECT')
+                            bpy.ops.object.material_slot_remove()
+                            bpy.ops.object.mode_set(mode='EDIT')
+                    else:
+                        if self.action == 'MARK':
+                            bpy.ops.object.material_slot_add()
+                            obj.active_material = item.material
+                elif item.line_type == 'MATERIAL_CONTAINS':
+                    for material in obj.data.materials:
+                        if item.contains in material.name:
+                            material_index = obj.data.materials.find(material.name)
+                            obj.active_material_index = material_index
+                            if self.action == 'MARK':
+                                bpy.ops.object.material_slot_assign()
+                            elif self.action == 'MARK_IGNORE':
+                                bpy.ops.object.mode_set(mode='OBJECT')
+                                bpy.ops.object.material_slot_remove()
+                                bpy.ops.object.mode_set(mode='EDIT')
+                            break
+                elif item.line_type == 'VERTEX_GROUP_CONTAINS':
+                    for vertex_group in obj.vertex_groups:
+                        if item.contains in vertex_group.name:
+                            vertex_group_index = obj.vertex_groups.find(vertex_group.name)
+                            obj.vertex_groups.active_index = vertex_group_index
+                            if self.action == 'MARK':
+                                bpy.ops.object.vertex_group_assign()
+                            elif self.action == 'MARK_IGNORE':
+                                bpy.ops.object.vertex_group_remove_from()
+
+
         return {'FINISHED'}
 
 
@@ -249,7 +318,6 @@ class HIDEMANAGER_OT_State(Operator):
         return {'FINISHED'}
 
 
-# TODO maybe add filter for greasepencil layers
 class HIDEMANAGER_OT_Selected(Operator):
     bl_idname = 'hidemanager.selected'
     bl_label = ''

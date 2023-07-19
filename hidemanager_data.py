@@ -144,7 +144,7 @@ class HIDEMAANGER_PG_CustomCollectionEdit(PropertyGroup):
 
     line_enable: BoolProperty(default=True, name='Filter active state',
                               description='Enable / Disable filter. In case of disable, filter will be skipped')
-
+    # TODO add ignore filters
     line_type: EnumProperty(default='VERTEX_GROUP_CONTAINS', name='Filter type', items=[
         ('MATERIAL', 'Material', 'Filter will be applied to all objects with selected material', 'MATERIAL_DATA', 0),
         ('MATERIAL_CONTAINS', 'Material Contains', 'Filter will be applied to all objects with material that contains selected string', 'MATERIAL_DATA', 1),
