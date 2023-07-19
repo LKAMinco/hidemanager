@@ -4,6 +4,7 @@ import bpy
 from bpy.props import EnumProperty, BoolProperty, StringProperty
 from bpy.types import Operator
 from .hidemanager_utils import *
+from bpy.ops import object
 
 
 class HIDEMANAGER_OT_Force(Operator):
@@ -79,27 +80,27 @@ class HIDEMANAGER_OT_Force(Operator):
                         material_index = obj.data.materials.find(item.material.name)
                         obj.active_material_index = material_index
                         if self.action == 'MARK':
-                            bpy.ops.object.material_slot_assign()
+                            object.material_slot_assign()
                         elif self.action == 'MARK_IGNORE':
-                            bpy.ops.object.mode_set(mode='OBJECT')
-                            bpy.ops.object.material_slot_remove()
-                            bpy.ops.object.mode_set(mode='EDIT')
+                            object.mode_set(mode='OBJECT')
+                            object.material_slot_remove()
+                            object.mode_set(mode='EDIT')
                     else:
                         if self.action == 'MARK':
-                            bpy.ops.object.material_slot_add()
+                            object.material_slot_add()
                             obj.active_material = item.material
-                            bpy.ops.object.material_slot_assign()
+                            object.material_slot_assign()
                 elif item.line_type == 'MATERIAL_CONTAINS':
                     for material in obj.data.materials:
                         if item.contains in material.name:
                             material_index = obj.data.materials.find(material.name)
                             obj.active_material_index = material_index
                             if self.action == 'MARK':
-                                bpy.ops.object.material_slot_assign()
+                                object.material_slot_assign()
                             elif self.action == 'MARK_IGNORE':
-                                bpy.ops.object.mode_set(mode='OBJECT')
-                                bpy.ops.object.material_slot_remove()
-                                bpy.ops.object.mode_set(mode='EDIT')
+                                object.mode_set(mode='OBJECT')
+                                object.material_slot_remove()
+                                object.mode_set(mode='EDIT')
                             break
                 elif item.line_type == 'VERTEX_GROUP_CONTAINS':
                     for vertex_group in obj.vertex_groups:
@@ -107,9 +108,9 @@ class HIDEMANAGER_OT_Force(Operator):
                             vertex_group_index = obj.vertex_groups.find(vertex_group.name)
                             obj.vertex_groups.active_index = vertex_group_index
                             if self.action == 'MARK':
-                                bpy.ops.object.vertex_group_assign()
+                                object.vertex_group_assign()
                             elif self.action == 'MARK_IGNORE':
-                                bpy.ops.object.vertex_group_remove_from()
+                                object.vertex_group_remove_from()
 
 
         return {'FINISHED'}
@@ -1170,17 +1171,17 @@ class HIDEMANAGER_OT_Edit(Operator):
             return
         if self.operation == 'SELECT':
             obj.active_material_index = material_idx
-            bpy.ops.object.material_slot_select()
+            object.material_slot_select()
         elif self.operation == 'DESELECT':
             obj.active_material_index = material_idx
-            bpy.ops.object.material_slot_deselect()
+            object.material_slot_deselect()
         elif self.operation == 'HIDE':
             obj.active_material_index = material_idx
-            bpy.ops.object.material_slot_select()
+            object.material_slot_select()
             bpy.ops.mesh.hide()
         elif self.operation == 'SHOW':
             obj.active_material_index = material_idx
-            bpy.ops.object.material_slot_select()
+            object.material_slot_select()
             bpy.ops.mesh.reveal()
             bpy.ops.mesh.select_all(action='DESELECT')
 
@@ -1190,17 +1191,17 @@ class HIDEMANAGER_OT_Edit(Operator):
                 material_idx = obj.data.materials.find(mat.name)
                 if self.operation == 'SELECT':
                     obj.active_material_index = material_idx
-                    bpy.ops.object.material_slot_select()
+                    object.material_slot_select()
                 elif self.operation == 'DESELECT':
                     obj.active_material_index = material_idx
-                    bpy.ops.object.material_slot_deselect()
+                    object.material_slot_deselect()
                 elif self.operation == 'HIDE':
                     obj.active_material_index = material_idx
-                    bpy.ops.object.material_slot_select()
+                    object.material_slot_select()
                     bpy.ops.mesh.hide()
                 elif self.operation == 'SHOW':
                     obj.active_material_index = material_idx
-                    bpy.ops.object.material_slot_select()
+                    object.material_slot_select()
                     bpy.ops.mesh.reveal()
                     bpy.ops.mesh.select_all(action='DESELECT')
 
@@ -1209,16 +1210,16 @@ class HIDEMANAGER_OT_Edit(Operator):
             if contains in vgroup.name:
                 if self.operation == 'SELECT':
                     obj.vertex_groups.active_index = vgroup.index
-                    bpy.ops.object.vertex_group_select()
+                    object.vertex_group_select()
                 elif self.operation == 'DESELECT':
                     obj.vertex_groups.active_index = vgroup.index
-                    bpy.ops.object.vertex_group_deselect()
+                    object.vertex_group_deselect()
                 elif self.operation == 'HIDE':
                     obj.vertex_groups.active_index = vgroup.index
-                    bpy.ops.object.vertex_group_select()
+                    object.vertex_group_select()
                     bpy.ops.mesh.hide()
                 elif self.operation == 'SHOW':
                     obj.vertex_groups.active_index = vgroup.index
-                    bpy.ops.object.vertex_group_select()
+                    object.vertex_group_select()
                     bpy.ops.mesh.reveal()
                     bpy.ops.mesh.select_all(action='DESELECT')
