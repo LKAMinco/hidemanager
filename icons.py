@@ -7,6 +7,11 @@ icons_dir = str(Path(__file__).parent / 'icons')
 
 icons = previews.new()
 
+
+def unregister():
+    previews.remove(icons)
+
+
 icons_files = ['IGNORE',
                'TYPE_IGNORE',
                'HIERARCHY_IGNORE',

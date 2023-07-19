@@ -139,6 +139,7 @@ def register():
     addon_keymaps.append((km, kmi_mnu))
 
 
+
 def unregister():
     for cls in classes:
         unregister_class(cls)
@@ -149,7 +150,7 @@ def unregister():
 
     addon_keymaps.clear()
 
-    previews.remove(icons)
+    # previews.remove(icons)
 
     del Scene.hidemanager
     del Scene.hidemanager_group

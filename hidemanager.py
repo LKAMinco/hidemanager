@@ -88,6 +88,7 @@ class HIDEMANAGER_OT_Force(Operator):
                         if self.action == 'MARK':
                             bpy.ops.object.material_slot_add()
                             obj.active_material = item.material
+                            bpy.ops.object.material_slot_assign()
                 elif item.line_type == 'MATERIAL_CONTAINS':
                     for material in obj.data.materials:
                         if item.contains in material.name:
