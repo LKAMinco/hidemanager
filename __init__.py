@@ -4,7 +4,9 @@ from bpy.utils import previews
 from .hidemanager import *
 from .hidemanager_ui import *
 from .hidemanager_data import *
-from bpy.types import AddonPreferences
+from bpy.types import AddonPreferences, Scene, Object
+from bpy.props import IntProperty, BoolProperty, CollectionProperty
+from bpy.utils import register_class, unregister_class
 from .icons import icons
 
 bl_info = {
@@ -74,23 +76,23 @@ class HIDEMANAGER_AddonPreferences(AddonPreferences):
         row.prop(context.scene, 'hidemanager_use_force', text=str(context.scene.hidemanager_use_force), toggle=True)
 
 
-bpy.types.Scene.hidemanager_index = bpy.props.IntProperty()
-bpy.types.Scene.hidemanager_only_active = bpy.props.BoolProperty(default=False, name='Only Selected', description='If enabled, only selected filter will be executed')
-bpy.types.Scene.hidemanager_priority = bpy.props.BoolProperty(default=True, name='Priority',
+Scene.hidemanager_index = IntProperty()
+Scene.hidemanager_only_active = BoolProperty(default=False, name='Only Selected', description='If enabled, only selected filter will be executed')
+Scene.hidemanager_priority = BoolProperty(default=True, name='Priority',
                                                               description='If enabled, filters will be executed in order that are specified. If disabled, first will be executed ignore filters and then other. This can speedup the process of filtering')
-bpy.types.Scene.hidemanager_group_index = bpy.props.IntProperty()
-bpy.types.Scene.hidemanager_group_only_active = bpy.props.BoolProperty(default=True, name='Only Selected',
+Scene.hidemanager_group_index = IntProperty()
+Scene.hidemanager_group_only_active = BoolProperty(default=True, name='Only Selected',
                                                                        description='If enabled, only selected group filter will be executed. If disabled, all group filters will be executed. If order is enabled and selected group disabled, filters will be executed in order that are specified in from lowes enabled group to highest (duplicates are executed also e.g. 3,1,3 -> 3 will be executed as first but after 1 will be executed too)')
-bpy.types.Scene.hidemanager_group_order = bpy.props.BoolProperty(default=True, name='Use filter order',
+Scene.hidemanager_group_order = BoolProperty(default=True, name='Use filter order',
                                                                  description='If enabled, filters will be executed in order that are specified in group. If disabled, first will be executed ignore filters and then other')
-bpy.types.Scene.hidemanager_edit_index = bpy.props.IntProperty()
-bpy.types.Scene.hidemanager_edit_only_active = bpy.props.BoolProperty(default=True, name='Only Selected', description='If enabled, only selected filter will be executed.')
-bpy.types.Scene.hidemanager_use_hide = bpy.props.BoolProperty(default=True, description='Use Hide / Show operation in Pie Menu')
-bpy.types.Scene.hidemanager_use_select = bpy.props.BoolProperty(default=True, description='Use Select / Deselect operation in Pie Menu')
-bpy.types.Scene.hidemanager_use_render = bpy.props.BoolProperty(default=False, description='Use Disable / Enable in Renders operation in Pie Menu')
-bpy.types.Scene.hidemanager_use_viewport = bpy.props.BoolProperty(default=False, description='Use Disable / Enable in Viewport operation in Pie Menu')
-bpy.types.Scene.hidemanager_use_settings = bpy.props.BoolProperty(default=True, description='Use operations settings in Pie Menu')
-bpy.types.Scene.hidemanager_use_force = bpy.props.BoolProperty(default=True, description='Use Force operations in Pie Menu')
+Object.hidemanager_edit_index = IntProperty()
+Object.hidemanager_edit_only_active = BoolProperty(default=True, name='Only Selected', description='If enabled, only selected filter will be executed.')
+Scene.hidemanager_use_hide = BoolProperty(default=True, description='Use Hide / Show operation in Pie Menu')
+Scene.hidemanager_use_select = BoolProperty(default=True, description='Use Select / Deselect operation in Pie Menu')
+Scene.hidemanager_use_render = BoolProperty(default=False, description='Use Disable / Enable in Renders operation in Pie Menu')
+Scene.hidemanager_use_viewport = BoolProperty(default=False, description='Use Disable / Enable in Viewport operation in Pie Menu')
+Scene.hidemanager_use_settings = BoolProperty(default=True, description='Use operations settings in Pie Menu')
+Scene.hidemanager_use_force = BoolProperty(default=True, description='Use Force operations in Pie Menu')
 
 classes = (
     HIDEMANAGER_PG_CustomCollectionFilters,
@@ -118,11 +120,11 @@ classes = (
 
 def register():
     for cls in classes:
-        bpy.utils.register_class(cls)
+        register_class(cls)
 
-    bpy.types.Scene.hidemanager = bpy.props.CollectionProperty(type=HIDEMANAGER_PG_CustomCollectionFilters)
-    bpy.types.Scene.hidemanager_group = bpy.props.CollectionProperty(type=HIDEMAANGER_PG_CustomCollectionGroups)
-    bpy.types.Scene.hidemanager_edit = bpy.props.CollectionProperty(type=HIDEMAANGER_PG_CustomCollectionEdit)
+    Scene.hidemanager = CollectionProperty(type=HIDEMANAGER_PG_CustomCollectionFilters)
+    Scene.hidemanager_group = CollectionProperty(type=HIDEMAANGER_PG_CustomCollectionGroups)
+    Object.hidemanager_edit = CollectionProperty(type=HIDEMAANGER_PG_CustomCollectionEdit)
 
     # add keymap entry
     kc = bpy.context.window_manager.keyconfigs.addon
@@ -139,10 +141,7 @@ def register():
 
 def unregister():
     for cls in classes:
-        bpy.utils.unregister_class(cls)
-
-    del bpy.types.Scene.hidemanager
-    del bpy.types.Scene.hidemanager_group
+        unregister_class(cls)
 
     # remove keymap entry
     for km, kmi in addon_keymaps:
@@ -151,3 +150,27 @@ def unregister():
     addon_keymaps.clear()
 
     previews.remove(icons)
+
+    del Scene.hidemanager
+    del Scene.hidemanager_group
+    del Object.hidemanager_edit
+
+    del Scene.hidemanager_index
+    del Scene.hidemanager_only_active
+    del Scene.hidemanager_priority
+
+    del Scene.hidemanager_group_index
+    del Scene.hidemanager_group_only_active
+    del Scene.hidemanager_group_order
+
+    del Object.hidemanager_edit_index
+    del Object.hidemanager_edit_only_active
+
+    del Scene.hidemanager_use_hide
+    del Scene.hidemanager_use_select
+    del Scene.hidemanager_use_render
+    del Scene.hidemanager_use_viewport
+    del Scene.hidemanager_use_settings
+    del Scene.hidemanager_use_force
+
+

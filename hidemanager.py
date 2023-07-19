@@ -175,28 +175,28 @@ class HIDEMANAGER_OT_EditActions(Operator):
 
     def invoke(self, context, event):
         scene = context.scene
-        index = scene.hidemanager_edit_index
-
+        obj = context.active_object
+        index = obj.hidemanager_edit_index
         try:
-            item = scene.hidemanager_edit[index]
+            item = obj.hidemanager_edit[index]
         except IndexError:
             pass
         else:
             if self.action == 'REMOVE':
-                scene.hidemanager_edit_index -= 1
-                scene.hidemanager_edit.remove(index)
-            elif self.action == 'DOWN' and index < len(scene.hidemanager_edit) - 1:
-                item_next = scene.hidemanager_edit[index + 1].name
-                scene.hidemanager_edit.move(index, index + 1)
-                scene.hidemanager_edit_index += 1
-                info = 'Item "%s" moved to position %d' % (item.name, scene.hidemanager_edit_index + 1)
+                obj.hidemanager_edit_index -= 1
+                obj.hidemanager_edit.remove(index)
+            elif self.action == 'DOWN' and index < len(obj.hidemanager_edit) - 1:
+                item_next = obj.hidemanager_edit[index + 1].name
+                obj.hidemanager_edit.move(index, index + 1)
+                obj.hidemanager_edit_index += 1
+                info = 'Item "%s" moved to position %d' % (item.name, obj.hidemanager_edit_index + 1)
             elif self.action == 'UP' and index >= 1:
-                item_prev = scene.hidemanager_edit[index - 1].name
-                scene.hidemanager_edit.move(index, index - 1)
-                scene.hidemanager_edit_index -= 1
-                info = 'Item "%s" moved to position %d' % (item.name, scene.hidemanager_edit_index + 1)
+                item_prev = obj.hidemanager_edit[index - 1].name
+                obj.hidemanager_edit.move(index, index - 1)
+                obj.hidemanager_edit_index -= 1
+                info = 'Item "%s" moved to position %d' % (item.name, obj.hidemanager_edit_index + 1)
         if self.action == 'ADD':
-            item = scene.hidemanager_edit.add()
+            item = obj.hidemanager_edit.add()
         return {'FINISHED'}
 
 
@@ -1062,12 +1062,13 @@ class HIDEMANAGER_OT_Edit(Operator):
 
     def execute(self, context):
         scene = context.scene
-        index = scene.hidemanager_edit_index
+        obj = context.active_object
+        index = obj.hidemanager_edit_index
         already_checked = []
 
-        if scene.hidemanager_edit_only_active:
+        if obj.hidemanager_edit_only_active:
             try:
-                item = scene.hidemanager_edit[index]
+                item = obj.hidemanager_edit[index]
                 if not item.line_enable:
                     return {'FINISHED'}
             except IndexError:
@@ -1082,7 +1083,7 @@ class HIDEMANAGER_OT_Edit(Operator):
                     self.vertexGroupContains(obj, item.contains)
         else:
             obj = context.active_object
-            for filter in scene.hidemanager_edit:
+            for filter in obj.hidemanager_edit:
                 if not filter.line_enable:
                     continue
                 if filter.line_type == 'MATERIAL':

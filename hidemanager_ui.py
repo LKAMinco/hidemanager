@@ -121,6 +121,7 @@ class PanelBase:
     def drawEditPanel(self, context):
         layout = self.layout
         scene = context.scene
+        obj = context.active_object
 
         row = layout.row()
         row.label(text='!!! IN EDIT MODE DEPENDS ON SELECT MODE (VERT, EDGES, FACES) !!!')
@@ -139,7 +140,7 @@ class PanelBase:
         row.label(text='Enable / Disable / Invert all filters.')
 
         row = layout.row()
-        row.template_list('HIDEMANAGER_UL_EditItems', '', scene, 'hidemanager_edit', scene, 'hidemanager_edit_index',
+        row.template_list('HIDEMANAGER_UL_EditItems', '', obj, 'hidemanager_edit', obj, 'hidemanager_edit_index',
                           rows=5)
 
         col = row.column(align=True)
@@ -154,7 +155,7 @@ class PanelBase:
         col.separator()
         row = col.row(align=True)
 
-        selected = scene.hidemanager_edit_only_active
+        selected = obj.hidemanager_edit_only_active
 
         if selected:
             row.label(text='!!! ONLY SELECTED FILTER !!!')
@@ -166,7 +167,7 @@ class PanelBase:
 
         row = col.row(align=True)
         row.label(text='Use only selected group')
-        row.prop(scene, 'hidemanager_edit_only_active', text=str(scene.hidemanager_edit_only_active), toggle=True,
+        row.prop(obj, 'hidemanager_edit_only_active', text=str(obj.hidemanager_edit_only_active), toggle=True,
                  slider=True)
 
         hdmg_op = 'hidemanager.edit'
