@@ -3,6 +3,7 @@ import logging
 import bpy
 from bpy.props import EnumProperty, StringProperty, BoolProperty
 from bpy.types import PropertyGroup, UIList, Panel, Menu, Operator
+from .hidemanager_utils import getText
 from .icons import icons
 
 
@@ -179,7 +180,6 @@ class PanelBase:
         row = col.row(align=True)
         row.operator(hdmg_op, text='Hide Objects', icon='HIDE_ON').operation = 'HIDE'
         row.operator(hdmg_op, text='Show Objects', icon='HIDE_OFF').operation = 'SHOW'
-
 
         col.separator()
         box = col.box()
@@ -437,9 +437,16 @@ class HIDEMANAGER_PT_EditList(Panel, PanelBase):
 
 class HIDEMANAGER_MT_Menu(Menu):
     bl_idname = 'HIDEMANAGER_MT_Menu'
-    bl_label = 'Hide Manager Pie Menu'
+    bl_label = ''
 
     def draw(self, context):
+        if context.mode == 'EDIT_MESH':
+            self.layout.label(text='Hide Manager Edit Filters')
+        else:
+            if context.scene.hidemanager_pages == 'FILTERS':
+                self.layout.label(text='Hide Manager Filters')
+            elif context.scene.hidemanager_pages == 'GROUPS':
+                self.layout.label(text='Hide Manager Groups')
         pie = self.layout.menu_pie()
 
         is_edit = context.mode == 'EDIT_MESH'
@@ -453,48 +460,65 @@ class HIDEMANAGER_MT_Menu(Menu):
                 hdmg_op = 'hidemanager.all'
 
         if context.scene.hidemanager_use_select:
-            box = pie.box()
-            box.operator(hdmg_op, text='Select Objects', icon='RESTRICT_SELECT_OFF').operation = 'SELECT'
-            box.operator(hdmg_op, text='Deselect Objects',
-                         icon='RESTRICT_SELECT_ON').operation = 'DESELECT'
+            if context.scene.hidemanager_use_separated_ops_select:
+                layout = pie
+            else:
+                layout = pie.box()
+            text = getText('use_icons_select')
+            layout.operator(hdmg_op, text=text[0], icon='RESTRICT_SELECT_OFF').operation = 'SELECT'
+            layout.operator(hdmg_op, text=text[1], icon='RESTRICT_SELECT_ON').operation = 'DESELECT'
 
         if context.scene.hidemanager_use_hide:
-            box = pie.box()
-            box.operator(hdmg_op, text='Hide Objects', icon='HIDE_ON').operation = 'HIDE'
-            box.operator(hdmg_op, text='Show Objects', icon='HIDE_OFF').operation = 'SHOW'
+            if context.scene.hidemanager_use_separated_ops_hide:
+                layout = pie
+            else:
+                layout = pie.box()
+            text = getText('use_icons_hide')
+            layout.operator(hdmg_op, text=text[0], icon='HIDE_ON').operation = 'HIDE'
+            layout.operator(hdmg_op, text=text[1], icon='HIDE_OFF').operation = 'SHOW'
 
         if not is_edit:
             if context.scene.hidemanager_use_render:
-                box = pie.box()
-                box.operator(hdmg_op, text='Disable In Renders',
-                             icon='RESTRICT_RENDER_ON').operation = 'DISABLE_RENDER'
-                box.operator(hdmg_op, text='Enable In Renders',
-                             icon='RESTRICT_RENDER_OFF').operation = 'ENABLE_RENDER'
+                if context.scene.hidemanager_use_separated_ops_render:
+                    layout = pie
+                else:
+                    layout = pie.box()
+                text = getText('use_icons_render')
+                layout.operator(hdmg_op, text=text[0], icon='RESTRICT_RENDER_ON').operation = 'DISABLE_RENDER'
+                layout.operator(hdmg_op, text=text[1], icon='RESTRICT_RENDER_OFF').operation = 'ENABLE_RENDER'
 
         if not is_edit:
             if context.scene.hidemanager_use_viewport:
-                box = pie.box()
-                box.operator(hdmg_op, text='Disable In Viewports',
-                             icon='RESTRICT_VIEW_ON').operation = 'DISABLE_VIEWPORT'
-                box.operator(hdmg_op, text='Enable In Viewports',
-                             icon='RESTRICT_VIEW_OFF').operation = 'ENABLE_VIEWPORT'
+                if context.scene.hidemanager_use_separated_ops_viewport:
+                    layout = pie
+                else:
+                    layout = pie.box()
+                text = getText('use_icons_viewport')
+                layout.operator(hdmg_op, text=text[0], icon='RESTRICT_VIEW_ON').operation = 'DISABLE_VIEWPORT'
+                layout.operator(hdmg_op, text=text[1], icon='RESTRICT_VIEW_OFF').operation = 'ENABLE_VIEWPORT'
 
         if context.scene.hidemanager_use_force:
+            text = getText('use_icons_force')
             if not is_edit:
                 row = pie.box().row(align=True)
-                row.operator('hidemanager.force', text='Mark', icon='ADD').action = 'MARK'
-                row.operator('hidemanager.force', text='Unmark', icon='PANEL_CLOSE').action = 'UNMARK'
-                row.operator('hidemanager.force', text='Mark Ignore', icon='REMOVE').action = 'MARK_IGNORE'
+                row.operator('hidemanager.force', text=text[0], icon='ADD').action = 'MARK'
+                row.operator('hidemanager.force', text=text[1], icon='PANEL_CLOSE').action = 'UNMARK'
+                row.operator('hidemanager.force', text=text[2], icon='REMOVE').action = 'MARK_IGNORE'
             else:
                 row = pie.box().row(align=True)
-                row.operator('hidemanager.force', text='Assign', icon='ADD').action = 'MARK'
-                row.operator('hidemanager.force', text='Remove', icon='REMOVE').action = 'MARK_IGNORE'
+                row.operator('hidemanager.force', text=text[0], icon='ADD').action = 'MARK'
+                row.operator('hidemanager.force', text=text[1], icon='REMOVE').action = 'MARK_IGNORE'
 
         if not is_edit:
             if context.scene.hidemanager_use_settings:
-                box = pie.box()
-                box.prop(context.scene, 'hidemanager_only_active', text='Use only selected filter')
-                box.prop(context.scene, 'hidemanager_priority', text='Use filter priority')
+                if context.scene.hidemanager_pages == 'FILTERS':
+                    box = pie.box()
+                    box.prop(context.scene, 'hidemanager_only_active', text='Use only selected filter')
+                    box.prop(context.scene, 'hidemanager_priority', text='Use filter priority')
+                elif context.scene.hidemanager_pages == 'GROUPS':
+                    box = pie.box()
+                    box.prop(context.scene, 'hidemanager_group_only_active', text='Use only selected group')
+                    box.prop(context.scene, 'hidemanager_group_order', text='Use filters in specified order')
         else:
             obj = context.active_object
             if context.scene.hidemanager_use_settings:
@@ -508,8 +532,6 @@ class HIDEMANAGER_OT_EditMenuDialog(Operator, PanelBase):
     bl_description = 'Hidemanager Popup Dialog'
     bl_options = {'REGISTER', 'UNDO'}
 
-    pages: EnumProperty(default='FILTERS', items=[('FILTERS', 'Filters', 'Filters'), ('GROUPS', 'Groups', 'Groups')])
-
     def invoke(self, context, event):
         return context.window_manager.invoke_popup(self, width=450)
 
@@ -519,11 +541,11 @@ class HIDEMANAGER_OT_EditMenuDialog(Operator, PanelBase):
         else:
             layout = self.layout
             row = layout.row(align=True)
-            row.prop(self, 'pages', expand=True)
+            row.prop(context.scene, 'hidemanager_pages', expand=True)
 
-            if self.pages == 'FILTERS':
+            if context.scene.hidemanager_pages == 'FILTERS':
                 self.drawFilterPanel(context)
-            elif self.pages == 'GROUPS':
+            elif context.scene.hidemanager_pages == 'GROUPS':
                 self.drawGroupPanel(context)
 
     def execute(self, context):
