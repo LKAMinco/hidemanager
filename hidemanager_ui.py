@@ -184,14 +184,14 @@ class PanelBase:
         col.separator()
         box = col.box()
         row = box.row()
-        if scene.filters_enabled:
+        if scene.hidemanager_filters_enabled:
             icon = 'TRIA_DOWN'
         else:
             icon = 'TRIA_RIGHT'
-        row.prop(scene, 'filters_enabled', text='', icon=icon, emboss=False)
+        row.prop(scene, 'hidemanager_filters_enabled', text='', icon=icon, emboss=False)
         row.label(text='Additional actions')
 
-        if scene.filters_enabled:
+        if scene.hidemanager_filters_enabled:
             col = box.column(align=True)
             row = col.row(align=True)
             row.operator(hdmg_op, text='Disable In Renders', icon='RESTRICT_RENDER_ON').operation = 'DISABLE_RENDER'
@@ -293,14 +293,14 @@ class PanelBase:
         col.separator()
         box = col.box()
         row = box.row()
-        if scene.groups_enabled:
+        if scene.hidemanager_groups_enabled:
             icon = 'TRIA_DOWN'
         else:
             icon = 'TRIA_RIGHT'
-        row.prop(scene, 'groups_enabled', text='', icon=icon, emboss=False)
+        row.prop(scene, 'hidemanager_groups_enabled', text='', icon=icon, emboss=False)
         row.label(text='Additional actions')
 
-        if scene.groups_enabled:
+        if scene.hidemanager_groups_enabled:
             row = col.row(align=True)
             op = row.operator(hdmg_op, text='Disable In Renders', icon='RESTRICT_RENDER_ON')
             op.operation = 'DISABLE_RENDER'
