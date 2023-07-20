@@ -118,75 +118,6 @@ class HIDEMANAGER_UL_EditItems(UIList):
 
 
 class PanelBase:
-    def drawEditPanel(self, context):
-        layout = self.layout
-        scene = context.scene
-        obj = context.active_object
-
-        row = layout.row()
-        row.label(text='!!! IN EDIT MODE DEPENDS ON SELECT MODE (VERT, EDGES, FACES) !!!')
-
-        row = layout.row(align=True)
-        op = row.operator('hidemanager.state', icon='CHECKMARK', text='')
-        op.action = 'ENABLE'
-        op.edit_mode = True
-        op = row.operator('hidemanager.state', icon='X', text='')
-        op.action = 'DISABLE'
-        op.edit_mode = True
-        op = row.operator('hidemanager.state', icon='UV_SYNC_SELECT', text='')
-        op.action = 'INVERT'
-        op.edit_mode = True
-        row.separator()
-        row.label(text='Enable / Disable / Invert all filters.')
-
-        row = layout.row()
-        row.template_list('HIDEMANAGER_UL_EditItems', '', obj, 'hidemanager_edit', obj, 'hidemanager_edit_index',
-                          rows=5)
-
-        col = row.column(align=True)
-        col.operator('hidemanager_edit.actions', icon='ADD', text='').action = 'ADD'
-        col.operator('hidemanager_edit.actions', icon='REMOVE', text='').action = 'REMOVE'
-        col.separator()
-        col.operator("hidemanager_edit.actions", icon='TRIA_UP', text="").action = 'UP'
-        col.operator("hidemanager_edit.actions", icon='TRIA_DOWN', text="").action = 'DOWN'
-
-        row = layout.row()
-        col = row.column(align=True)
-        row = col.row(align=True)
-        row.label(text='Apply filter on selection')
-        row = col.row(align=True)
-        row.operator('hidemanager.force', text='Mark', icon='ADD').action = 'MARK'
-        row.operator('hidemanager.force', text='Mark Ignore', icon='REMOVE').action = 'MARK_IGNORE'
-        col.separator()
-        row = col.row(align=True)
-
-        selected = obj.hidemanager_edit_only_active
-
-        if selected:
-            row.label(text='!!! ONLY SELECTED FILTER !!!')
-        else:
-            row.label(text='!!! ALL ENABLED FILTERS !!!')
-
-        row = col.row(align=True)
-        col.separator()
-
-        row = col.row(align=True)
-        row.label(text='Use only selected group')
-        row.prop(obj, 'hidemanager_edit_only_active', text=str(obj.hidemanager_edit_only_active), toggle=True,
-                 slider=True)
-
-        hdmg_op = 'hidemanager.edit'
-
-        row = col.row(align=True)
-        row.operator(hdmg_op, text='Select Objects', icon='RESTRICT_SELECT_OFF').operation = 'SELECT'
-
-        row.operator(hdmg_op, text='Deselect Objects', icon='RESTRICT_SELECT_ON').operation = 'DESELECT'
-
-        row = col.row(align=True)
-        row.operator(hdmg_op, text='Hide Objects', icon='HIDE_ON').operation = 'HIDE'
-
-        row.operator(hdmg_op, text='Show Objects', icon='HIDE_OFF').operation = 'SHOW'
-
     def drawFilterPanel(self, context):
         layout = self.layout
         scene = context.scene
@@ -211,15 +142,6 @@ class PanelBase:
 
         row = layout.row()
         col = row.column(align=True)
-
-        row = col.row(align=True)
-        row.label(text='Force object action')
-        row = col.row(align=True)
-        row.operator('hidemanager.force', text='Mark', icon='ADD').action = 'MARK'
-        row.operator('hidemanager.force', text='Unmark', icon='PANEL_CLOSE').action = 'UNMARK'
-        row.operator('hidemanager.force', text='Mark Ignore', icon='REMOVE').action = 'MARK_IGNORE'
-
-        col.separator()
         row = col.row(align=True)
 
         priority = scene.hidemanager_priority
@@ -248,41 +170,44 @@ class PanelBase:
 
         if scene.hidemanager_only_active:
             hdmg_op = 'hidemanager.selected'
-            row.operator(hdmg_op, text='Select Objects', icon='RESTRICT_SELECT_OFF').operation = 'SELECT'
-            row.operator(hdmg_op, text='Deselect Objects',
-                         icon='RESTRICT_SELECT_ON').operation = 'DESELECT'
-            row = col.row(align=True)
-            row.operator(hdmg_op, text='Hide Objects', icon='HIDE_ON').operation = 'HIDE'
-            row.operator(hdmg_op, text='Show Objects', icon='HIDE_OFF').operation = 'SHOW'
-            row = col.row(align=True)
-            row.operator(hdmg_op, text='Disable In Renders',
-                         icon='RESTRICT_RENDER_ON').operation = 'DISABLE_RENDER'
-            row.operator(hdmg_op, text='Enable In Renders',
-                         icon='RESTRICT_RENDER_OFF').operation = 'ENABLE_RENDER'
-            row = col.row(align=True)
-            row.operator(hdmg_op, text='Disable In Viewports',
-                         icon='RESTRICT_VIEW_ON').operation = 'DISABLE_VIEWPORT'
-            row.operator(hdmg_op, text='Enable In Viewports',
-                         icon='RESTRICT_VIEW_OFF').operation = 'ENABLE_VIEWPORT'
-
         else:
             hdmg_op = 'hidemanager.all'
-            row.operator(hdmg_op, text='Select Objects', icon='RESTRICT_SELECT_OFF').operation = 'SELECT'
-            row.operator(hdmg_op, text='Deselect Objects',
-                         icon='RESTRICT_SELECT_ON').operation = 'DESELECT'
+
+        row.operator(hdmg_op, text='Select Objects', icon='RESTRICT_SELECT_OFF').operation = 'SELECT'
+        row.operator(hdmg_op, text='Deselect Objects', icon='RESTRICT_SELECT_ON').operation = 'DESELECT'
+
+        row = col.row(align=True)
+        row.operator(hdmg_op, text='Hide Objects', icon='HIDE_ON').operation = 'HIDE'
+        row.operator(hdmg_op, text='Show Objects', icon='HIDE_OFF').operation = 'SHOW'
+
+
+        col.separator()
+        box = col.box()
+        row = box.row()
+        if scene.filters_enabled:
+            icon = 'TRIA_DOWN'
+        else:
+            icon = 'TRIA_RIGHT'
+        row.prop(scene, 'filters_enabled', text='', icon=icon, emboss=False)
+        row.label(text='Additional actions')
+
+        if scene.filters_enabled:
+            col = box.column(align=True)
             row = col.row(align=True)
-            row.operator(hdmg_op, text='Hide Objects', icon='HIDE_ON').operation = 'HIDE'
-            row.operator(hdmg_op, text='Show Objects', icon='HIDE_OFF').operation = 'SHOW'
+            row.operator(hdmg_op, text='Disable In Renders', icon='RESTRICT_RENDER_ON').operation = 'DISABLE_RENDER'
+            row.operator(hdmg_op, text='Enable In Renders', icon='RESTRICT_RENDER_OFF').operation = 'ENABLE_RENDER'
+
             row = col.row(align=True)
-            row.operator(hdmg_op, text='Disable In Renders',
-                         icon='RESTRICT_RENDER_ON').operation = 'DISABLE_RENDER'
-            row.operator(hdmg_op, text='Enable In Renders',
-                         icon='RESTRICT_RENDER_OFF').operation = 'ENABLE_RENDER'
+            row.operator(hdmg_op, text='Disable In Viewports', icon='RESTRICT_VIEW_ON').operation = 'DISABLE_VIEWPORT'
+            row.operator(hdmg_op, text='Enable In Viewports', icon='RESTRICT_VIEW_OFF').operation = 'ENABLE_VIEWPORT'
+
+            col.separator()
             row = col.row(align=True)
-            row.operator(hdmg_op, text='Disable In Viewports',
-                         icon='RESTRICT_VIEW_ON').operation = 'DISABLE_VIEWPORT'
-            row.operator(hdmg_op, text='Enable In Viewports',
-                         icon='RESTRICT_VIEW_OFF').operation = 'ENABLE_VIEWPORT'
+            row.label(text='Force object action')
+            row = col.row(align=True)
+            row.operator('hidemanager.force', text='Mark', icon='ADD').action = 'MARK'
+            row.operator('hidemanager.force', text='Unmark', icon='PANEL_CLOSE').action = 'UNMARK'
+            row.operator('hidemanager.force', text='Mark Ignore', icon='REMOVE').action = 'MARK_IGNORE'
 
     def drawGroupPanel(self, context):
         layout = self.layout
@@ -365,23 +290,103 @@ class PanelBase:
         op.operation = 'SHOW'
         op.group = True
 
+        col.separator()
+        box = col.box()
+        row = box.row()
+        if scene.groups_enabled:
+            icon = 'TRIA_DOWN'
+        else:
+            icon = 'TRIA_RIGHT'
+        row.prop(scene, 'groups_enabled', text='', icon=icon, emboss=False)
+        row.label(text='Additional actions')
+
+        if scene.groups_enabled:
+            row = col.row(align=True)
+            op = row.operator(hdmg_op, text='Disable In Renders', icon='RESTRICT_RENDER_ON')
+            op.operation = 'DISABLE_RENDER'
+            op.group = True
+
+            op = row.operator(hdmg_op, text='Enable In Renders', icon='RESTRICT_RENDER_OFF')
+            op.operation = 'ENABLE_RENDER'
+            op.group = True
+
+            row = col.row(align=True)
+            op = row.operator(hdmg_op, text='Disable In Viewports', icon='RESTRICT_VIEW_ON')
+            op.operation = 'DISABLE_VIEWPORT'
+            op.group = True
+
+            op = row.operator(hdmg_op, text='Enable In Viewports', icon='RESTRICT_VIEW_OFF')
+            op.operation = 'ENABLE_VIEWPORT'
+            op.group = True
+
+    def drawEditPanel(self, context):
+        layout = self.layout
+        scene = context.scene
+        obj = context.active_object
+
+        row = layout.row()
+        row.label(text='!!! IN EDIT MODE DEPENDS ON SELECT MODE (VERT, EDGES, FACES) !!!')
+
+        row = layout.row(align=True)
+        op = row.operator('hidemanager.state', icon='CHECKMARK', text='')
+        op.action = 'ENABLE'
+        op.edit_mode = True
+        op = row.operator('hidemanager.state', icon='X', text='')
+        op.action = 'DISABLE'
+        op.edit_mode = True
+        op = row.operator('hidemanager.state', icon='UV_SYNC_SELECT', text='')
+        op.action = 'INVERT'
+        op.edit_mode = True
+        row.separator()
+        row.label(text='Enable / Disable / Invert all filters.')
+
+        row = layout.row()
+        row.template_list('HIDEMANAGER_UL_EditItems', '', obj, 'hidemanager_edit', obj, 'hidemanager_edit_index',
+                          rows=5)
+
+        col = row.column(align=True)
+        col.operator('hidemanager_edit.actions', icon='ADD', text='').action = 'ADD'
+        col.operator('hidemanager_edit.actions', icon='REMOVE', text='').action = 'REMOVE'
+        col.separator()
+        col.operator("hidemanager_edit.actions", icon='TRIA_UP', text="").action = 'UP'
+        col.operator("hidemanager_edit.actions", icon='TRIA_DOWN', text="").action = 'DOWN'
+
+        row = layout.row()
+        col = row.column(align=True)
         row = col.row(align=True)
-        op = row.operator(hdmg_op, text='Disable In Renders', icon='RESTRICT_RENDER_ON')
-        op.operation = 'DISABLE_RENDER'
-        op.group = True
+        row.label(text='Apply filter on selection')
+        row = col.row(align=True)
+        row.operator('hidemanager.force', text='Mark', icon='ADD').action = 'MARK'
+        row.operator('hidemanager.force', text='Mark Ignore', icon='REMOVE').action = 'MARK_IGNORE'
+        col.separator()
+        row = col.row(align=True)
 
-        op = row.operator(hdmg_op, text='Enable In Renders', icon='RESTRICT_RENDER_OFF')
-        op.operation = 'ENABLE_RENDER'
-        op.group = True
+        selected = obj.hidemanager_edit_only_active
+
+        if selected:
+            row.label(text='!!! ONLY SELECTED FILTER !!!')
+        else:
+            row.label(text='!!! ALL ENABLED FILTERS !!!')
 
         row = col.row(align=True)
-        op = row.operator(hdmg_op, text='Disable In Viewports', icon='RESTRICT_VIEW_ON')
-        op.operation = 'DISABLE_VIEWPORT'
-        op.group = True
+        col.separator()
 
-        op = row.operator(hdmg_op, text='Enable In Viewports', icon='RESTRICT_VIEW_OFF')
-        op.operation = 'ENABLE_VIEWPORT'
-        op.group = True
+        row = col.row(align=True)
+        row.label(text='Use only selected group')
+        row.prop(obj, 'hidemanager_edit_only_active', text=str(obj.hidemanager_edit_only_active), toggle=True,
+                 slider=True)
+
+        hdmg_op = 'hidemanager.edit'
+
+        row = col.row(align=True)
+        row.operator(hdmg_op, text='Select Objects', icon='RESTRICT_SELECT_OFF').operation = 'SELECT'
+
+        row.operator(hdmg_op, text='Deselect Objects', icon='RESTRICT_SELECT_ON').operation = 'DESELECT'
+
+        row = col.row(align=True)
+        row.operator(hdmg_op, text='Hide Objects', icon='HIDE_ON').operation = 'HIDE'
+
+        row.operator(hdmg_op, text='Show Objects', icon='HIDE_OFF').operation = 'SHOW'
 
 
 class HIDEMANAGER_PT_List(Panel, PanelBase):

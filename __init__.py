@@ -87,12 +87,28 @@ Scene.hidemanager_group_order = BoolProperty(default=True, name='Use filter orde
                                                                  description='If enabled, filters will be executed in order that are specified in group. If disabled, first will be executed ignore filters and then other')
 Object.hidemanager_edit_index = IntProperty()
 Object.hidemanager_edit_only_active = BoolProperty(default=True, name='Only Selected', description='If enabled, only selected filter will be executed.')
+
 Scene.hidemanager_use_hide = BoolProperty(default=True, description='Use Hide / Show operation in Pie Menu')
 Scene.hidemanager_use_select = BoolProperty(default=True, description='Use Select / Deselect operation in Pie Menu')
 Scene.hidemanager_use_render = BoolProperty(default=False, description='Use Disable / Enable in Renders operation in Pie Menu')
 Scene.hidemanager_use_viewport = BoolProperty(default=False, description='Use Disable / Enable in Viewport operation in Pie Menu')
 Scene.hidemanager_use_settings = BoolProperty(default=True, description='Use operations settings in Pie Menu')
 Scene.hidemanager_use_force = BoolProperty(default=True, description='Use Force operations in Pie Menu')
+
+Scene.filters_enabled = BoolProperty(default=False)
+Scene.groups_enabled = BoolProperty(default=False)
+
+Scene.use_icons_hide = BoolProperty(default=False)
+Scene.use_separated_ops_hide = BoolProperty(default=False)
+Scene.use_icons_select = BoolProperty(default=False)
+Scene.use_separated_ops_select = BoolProperty(default=False)
+Scene.use_icons_render = BoolProperty(default=False)
+Scene.use_separated_ops_render = BoolProperty(default=False)
+Scene.use_icons_viewport = BoolProperty(default=False)
+Scene.use_separated_ops_viewport = BoolProperty(default=False)
+Scene.use_icons_force = BoolProperty(default=False)
+
+
 
 classes = (
     HIDEMANAGER_PG_CustomCollectionFilters,
