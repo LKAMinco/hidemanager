@@ -1,6 +1,5 @@
 import logging
 
-import bpy
 from bpy.props import EnumProperty, StringProperty, BoolProperty
 from bpy.types import PropertyGroup, UIList, Panel, Menu, Operator
 from .hidemanager_utils import getText
@@ -376,7 +375,7 @@ class PanelBase:
         col.separator()
 
         row = col.row(align=True)
-        row.label(text='Use only selected group')
+        row.label(text='Use only selected filter')
         row.prop(obj, 'hidemanager_edit_only_active', text=str(obj.hidemanager_edit_only_active), toggle=True,
                  slider=True)
 
@@ -396,12 +395,17 @@ class PanelBase:
 class HIDEMANAGER_PT_List(Panel, PanelBase):
     bl_idname = 'HIDEMANAGER_PT_List'
     bl_space_type = 'VIEW_3D'
-    bl_context = 'objectmode'
     bl_region_type = 'UI'
     bl_category = 'Hide Manager'
     bl_label = 'Hide Manager Filters'
     bl_order = 1
     bl_description = 'Hide Manager Filters'
+
+    @classmethod
+    def poll(cls, context):
+        if context.mode == 'OBJECT' or context.scene.use_objectmode_filters_in_editmode:
+            return True
+        return False
 
     def draw(self, context):
         self.drawFilterPanel(context)
@@ -410,12 +414,17 @@ class HIDEMANAGER_PT_List(Panel, PanelBase):
 class HIDEMANAGER_PT_GroupList(Panel, PanelBase):
     bl_idname = 'HIDEMANAGER_PT_GroupList'
     bl_space_type = 'VIEW_3D'
-    bl_context = 'objectmode'
     bl_region_type = 'UI'
     bl_category = 'Hide Manager'
     bl_label = 'Hide Manager Groups'
     bl_order = 2
     bl_options = {'DEFAULT_CLOSED'}
+
+    @classmethod
+    def poll(cls, context):
+        if context.mode == 'OBJECT' or context.scene.use_objectmode_filters_in_editmode:
+            return True
+        return False
 
     def draw(self, context):
         self.drawGroupPanel(context)
@@ -429,12 +438,6 @@ class HIDEMANAGER_PT_EditList(Panel, PanelBase):
     bl_category = 'Hide Manager'
     bl_label = 'Hide Manager Edit Filters'
 
-    @classmethod
-    def poll(cls, context):
-        if context.mode == 'EDIT_MESH':
-            return True
-        return False
-
     def draw(self, context):
         self.drawEditPanel(context)
 
@@ -444,93 +447,164 @@ class HIDEMANAGER_MT_Menu(Menu):
     bl_label = ''
 
     def draw(self, context):
-        if context.mode == 'EDIT_MESH':
+        obj_in_edit = context.scene.use_objectmode_filters_in_editmode
+
+        pages = None
+
+        if obj_in_edit:
+            if context.mode == 'EDIT_MESH':
+                pages = context.scene.hidemanager_edit_pages
+            else:
+                pages = context.scene.hidemanager_pages
+        else:
+            pages = context.scene.hidemanager_pages
+
+        if context.mode == 'EDIT_MESH' and not obj_in_edit:
             self.layout.label(text='Hide Manager Edit Filters')
         else:
-            if context.scene.hidemanager_pages == 'FILTERS':
+            if pages == 'FILTERS':
                 self.layout.label(text='Hide Manager Filters')
-            elif context.scene.hidemanager_pages == 'GROUPS':
+            elif pages == 'GROUPS':
                 self.layout.label(text='Hide Manager Groups')
+            elif pages == 'EDIT':
+                self.layout.label(text='Hide Manager Edit Filters')
+
         pie = self.layout.menu_pie()
 
         is_edit = context.mode == 'EDIT_MESH'
 
-        if is_edit:
+        use_select = context.scene.hidemanager_use_select
+        use_separated_ops_select = context.scene.hidemanager_use_separated_ops_select
+
+        use_hide = context.scene.hidemanager_use_hide
+        use_separated_ops_hide = context.scene.hidemanager_use_separated_ops_hide
+
+        use_render = context.scene.hidemanager_use_render
+        use_separated_ops_render = context.scene.hidemanager_use_separated_ops_render
+
+        use_viewport = context.scene.hidemanager_use_viewport
+        use_separated_ops_viewport = context.scene.hidemanager_use_separated_ops_viewport
+
+        use_force = context.scene.hidemanager_use_force
+        use_settings = context.scene.hidemanager_use_settings
+
+        if is_edit and not obj_in_edit:
             hdmg_op = 'hidemanager.edit'
         else:
-            if context.scene.hidemanager_only_active:
-                hdmg_op = 'hidemanager.selected'
-            else:
+            if pages == 'FILTERS':
+                if context.scene.hidemanager_only_active:
+                    hdmg_op = 'hidemanager.selected'
+                else:
+                    hdmg_op = 'hidemanager.all'
+                groups = False
+            elif pages == 'GROUPS':
                 hdmg_op = 'hidemanager.all'
+                groups = True
+            elif pages == 'EDIT':
+                hdmg_op = 'hidemanager.edit'
 
-        if context.scene.hidemanager_use_select:
-            if context.scene.hidemanager_use_separated_ops_select:
+        if use_select:
+            if use_separated_ops_select:
                 layout = pie
             else:
                 layout = pie.box()
             text = getText('use_icons_select')
-            layout.operator(hdmg_op, text=text[0], icon='RESTRICT_SELECT_OFF').operation = 'SELECT'
-            layout.operator(hdmg_op, text=text[1], icon='RESTRICT_SELECT_ON').operation = 'DESELECT'
+            op = layout.operator(hdmg_op, text=text[0], icon='RESTRICT_SELECT_OFF')
+            op.operation = 'SELECT'
+            if hdmg_op == 'hidemanager.all':
+                op.group = groups
+            op = layout.operator(hdmg_op, text=text[1], icon='RESTRICT_SELECT_ON')
+            op.operation = 'DESELECT'
+            if hdmg_op == 'hidemanager.all':
+                op.group = groups
 
-        if context.scene.hidemanager_use_hide:
-            if context.scene.hidemanager_use_separated_ops_hide:
+        if use_hide:
+            if use_separated_ops_hide:
                 layout = pie
             else:
                 layout = pie.box()
             text = getText('use_icons_hide')
-            layout.operator(hdmg_op, text=text[0], icon='HIDE_ON').operation = 'HIDE'
-            layout.operator(hdmg_op, text=text[1], icon='HIDE_OFF').operation = 'SHOW'
+            op = layout.operator(hdmg_op, text=text[0], icon='HIDE_ON')
+            op.operation = 'HIDE'
+            if hdmg_op == 'hidemanager.all':
+                op.group = groups
+            op = layout.operator(hdmg_op, text=text[1], icon='HIDE_OFF')
+            op.operation = 'SHOW'
+            if hdmg_op == 'hidemanager.all':
+                op.group = groups
 
-        if not is_edit:
-            if context.scene.hidemanager_use_render:
-                if context.scene.hidemanager_use_separated_ops_render:
-                    layout = pie
-                else:
-                    layout = pie.box()
-                text = getText('use_icons_render')
-                layout.operator(hdmg_op, text=text[0], icon='RESTRICT_RENDER_ON').operation = 'DISABLE_RENDER'
-                layout.operator(hdmg_op, text=text[1], icon='RESTRICT_RENDER_OFF').operation = 'ENABLE_RENDER'
+        if not is_edit or obj_in_edit:
+            if use_render:
+                if pages != 'EDIT':
+                    if use_separated_ops_render:
+                        layout = pie
+                    else:
+                        layout = pie.box()
+                    text = getText('use_icons_render')
+                    op = layout.operator(hdmg_op, text=text[0], icon='RESTRICT_RENDER_ON')
+                    op.operation = 'DISABLE_RENDER'
+                    if hdmg_op == 'hidemanager.all':
+                        op.group = groups
+                    op = layout.operator(hdmg_op, text=text[1], icon='RESTRICT_RENDER_OFF')
+                    op.operation = 'ENABLE_RENDER'
+                    if hdmg_op == 'hidemanager.all':
+                        op.group = groups
 
-        if not is_edit:
-            if context.scene.hidemanager_use_viewport:
-                if context.scene.hidemanager_use_separated_ops_viewport:
-                    layout = pie
-                else:
-                    layout = pie.box()
-                text = getText('use_icons_viewport')
-                layout.operator(hdmg_op, text=text[0], icon='RESTRICT_VIEW_ON').operation = 'DISABLE_VIEWPORT'
-                layout.operator(hdmg_op, text=text[1], icon='RESTRICT_VIEW_OFF').operation = 'ENABLE_VIEWPORT'
+        if not is_edit or obj_in_edit:
+            if use_viewport:
+                if pages != 'EDIT':
+                    if use_separated_ops_viewport:
+                        layout = pie
+                    else:
+                        layout = pie.box()
+                    text = getText('use_icons_viewport')
+                    op = layout.operator(hdmg_op, text=text[0], icon='RESTRICT_VIEW_ON')
+                    op.operation = 'DISABLE_VIEWPORT'
+                    if hdmg_op == 'hidemanager.all':
+                        op.group = groups
+                    op = layout.operator(hdmg_op, text=text[1], icon='RESTRICT_VIEW_OFF')
+                    op.operation = 'ENABLE_VIEWPORT'
+                    if hdmg_op == 'hidemanager.all':
+                        op.group = groups
 
-        if context.scene.hidemanager_use_force:
+        if use_force:
             text = getText('use_icons_force')
-            if not is_edit:
+            if not is_edit or obj_in_edit:
                 row = pie.box().row(align=True)
-                row.operator('hidemanager.force', text=text[0], icon='ADD').action = 'MARK'
-                row.operator('hidemanager.force', text=text[1], icon='PANEL_CLOSE').action = 'UNMARK'
-                row.operator('hidemanager.force', text=text[2], icon='REMOVE').action = 'MARK_IGNORE'
+                if pages == 'FILTERS' or pages == 'GROUPS':
+                    row.operator('hidemanager.force', text=text[0], icon='ADD').action = 'MARK'
+                    row.operator('hidemanager.force', text=text[1], icon='PANEL_CLOSE').action = 'UNMARK'
+                    row.operator('hidemanager.force', text=text[2], icon='REMOVE').action = 'MARK_IGNORE'
+                else:
+                    row.operator('hidemanager.force', text=text[0], icon='ADD').action = 'MARK'
+                    row.operator('hidemanager.force', text=text[1], icon='REMOVE').action = 'MARK_IGNORE'
             else:
                 row = pie.box().row(align=True)
                 row.operator('hidemanager.force', text=text[0], icon='ADD').action = 'MARK'
                 row.operator('hidemanager.force', text=text[1], icon='REMOVE').action = 'MARK_IGNORE'
 
-        if not is_edit:
-            if context.scene.hidemanager_use_settings:
-                if context.scene.hidemanager_pages == 'FILTERS':
+        if not is_edit or obj_in_edit:
+            if use_settings:
+                if pages == 'FILTERS':
                     box = pie.box()
                     box.prop(context.scene, 'hidemanager_only_active', text='Use only selected filter')
                     box.prop(context.scene, 'hidemanager_priority', text='Use filter priority')
-                elif context.scene.hidemanager_pages == 'GROUPS':
+                elif pages == 'GROUPS':
                     box = pie.box()
                     box.prop(context.scene, 'hidemanager_group_only_active', text='Use only selected group')
                     box.prop(context.scene, 'hidemanager_group_order', text='Use filters in specified order')
+                elif pages == 'EDIT':
+                    box = pie.box()
+                    obj = context.active_object
+                    box.prop(obj, 'hidemanager_edit_only_active', text='Use only selected filter')
         else:
             obj = context.active_object
-            if context.scene.hidemanager_use_settings:
+            if use_settings:
                 box = pie.box()
                 box.prop(obj, 'hidemanager_edit_only_active', text='Use only selected filter')
 
 
-class HIDEMANAGER_OT_EditMenuDialog(Operator, PanelBase):
+class HIDEMANAGER_OT_MenuDialog(Operator, PanelBase):
     bl_idname = 'hidemanager.edit_menu_dialog'
     bl_label = 'Hidemanager Popup Dialog'
     bl_description = 'Hidemanager Popup Dialog'
@@ -540,17 +614,30 @@ class HIDEMANAGER_OT_EditMenuDialog(Operator, PanelBase):
         return context.window_manager.invoke_popup(self, width=450)
 
     def draw(self, context):
-        if context.mode == 'EDIT_MESH':
+        if context.mode == 'EDIT_MESH' and not context.scene.use_objectmode_filters_in_editmode:
             self.drawEditPanel(context)
         else:
             layout = self.layout
             row = layout.row(align=True)
-            row.prop(context.scene, 'hidemanager_pages', expand=True)
 
-            if context.scene.hidemanager_pages == 'FILTERS':
+            pages = None
+            if context.scene.use_objectmode_filters_in_editmode:
+                if context.mode == 'EDIT_MESH':
+                    row.prop(context.scene, 'hidemanager_edit_pages', expand=True)
+                    pages = context.scene.hidemanager_edit_pages
+                else:
+                    row.prop(context.scene, 'hidemanager_pages', expand=True)
+                    pages = context.scene.hidemanager_pages
+            else:
+                row.prop(context.scene, 'hidemanager_pages', expand=True)
+                pages = context.scene.hidemanager_pages
+
+            if pages == 'FILTERS':
                 self.drawFilterPanel(context)
-            elif context.scene.hidemanager_pages == 'GROUPS':
+            elif pages == 'GROUPS':
                 self.drawGroupPanel(context)
+            elif pages == 'EDIT':
+                self.drawEditPanel(context)
 
     def execute(self, context):
         return {'FINISHED'}

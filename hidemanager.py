@@ -1,5 +1,3 @@
-import logging
-
 import bpy
 from bpy.props import EnumProperty, BoolProperty, StringProperty
 from bpy.types import Operator
@@ -1155,14 +1153,20 @@ class HIDEMANAGER_OT_Edit(Operator):
 
     @classmethod
     def description(cls, context, properties):
+        obj = context.active_object
+        txt = ''
+        if obj.hidemanager_edit_only_active:
+            txt = 'selected filter'
+        else:
+            txt = 'all enabled filters'
         if properties.operation == 'SELECT':
-            return 'Select objects by selected filter'
+            return 'Select objects by %s' % txt
         elif properties.operation == 'DESELECT':
-            return 'Deselect objects by selected filter'
+            return 'Deselect objects by %s' % txt
         elif properties.operation == 'HIDE':
-            return 'Hide objects by selected filter'
+            return 'Hide objects by %s' % txt
         elif properties.operation == 'SHOW':
-            return 'Show objects by selected filter'
+            return 'Show objects by %s' % txt
 
     def execute(self, context):
         scene = context.scene

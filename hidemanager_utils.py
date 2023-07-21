@@ -131,7 +131,7 @@ def getText(enabled):
         else:
             return 'Hide Objects', 'Show Objects'
     elif enabled == 'use_icons_select':
-        if getattr(bpy.context.scene, 'hidemanager_use_icons_hide'):
+        if getattr(bpy.context.scene, 'hidemanager_use_icons_select'):
             return '', ''
         else:
             return 'Select Objects', 'Deselect Objects'
@@ -147,12 +147,13 @@ def getText(enabled):
             return 'Disable in Viewport', 'Enable in Viewport'
     elif enabled == 'use_icons_force':
         if getattr(bpy.context.scene, 'hidemanager_use_icons_force'):
-            if bpy.context.mode == 'EDIT_MESH':
+            if bpy.context.mode == 'EDIT_MESH' and not bpy.context.scene.use_objectmode_filters_in_editmode:
                 return '', ''
             else:
                 return '', '', ''
         else:
-            if bpy.context.mode == 'EDIT_MESH':
+            if bpy.context.mode == 'EDIT_MESH' and not bpy.context.scene.use_objectmode_filters_in_editmode:
                 return 'Assign', 'Remove'
             else:
                 return 'Mark', 'Unmark', 'Mark Ignore'
+

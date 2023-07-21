@@ -1,5 +1,3 @@
-import logging
-
 import bpy
 from bpy.utils import previews
 from os import path

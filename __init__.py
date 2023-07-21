@@ -55,6 +55,10 @@ class HIDEMANAGER_AddonPreferences(AddonPreferences):
         box = split.box()
         box.label(text='Settings')
 
+        row = box.row()
+        row.label(text='Use object mode filters in edit mode')
+        row.prop(context.scene, 'use_objectmode_filters_in_editmode', text=str(context.scene.use_objectmode_filters_in_editmode), toggle=True)
+
         drawSettingsItems(self, box, context, 'pop_hide', 'Hide / Show operation', 'use_hide', 'use_icons_hide', 'use_separated_ops_hide')
         drawSettingsItems(self, box, context, 'pop_select', 'Select / Deselect operation', 'use_select', 'use_icons_select', 'use_separated_ops_select')
         drawSettingsItems(self, box, context, 'pop_render', 'Disable / Enable in Renders operation', 'use_render', 'use_icons_render', 'use_separated_ops_render')
@@ -82,7 +86,7 @@ classes = (
     HIDEMANAGER_OT_Edit,
     HIDEMANAGER_OT_Force,
     HIDEMANAGER_MT_Menu,
-    HIDEMANAGER_OT_EditMenuDialog,
+    HIDEMANAGER_OT_MenuDialog,
     HIDEMANAGER_AddonPreferences
 )
 
@@ -128,6 +132,9 @@ def register():
     Scene.hidemanager_use_icons_force = BoolProperty(default=False)
 
     Scene.hidemanager_pages = EnumProperty(default='FILTERS', items=[('FILTERS', 'Filters', 'Filters'), ('GROUPS', 'Groups', 'Groups')])
+    Scene.hidemanager_edit_pages = EnumProperty(default='EDIT', items=[('FILTERS', 'Filters', 'Filters'), ('GROUPS', 'Groups', 'Groups'), ('EDIT', 'Edit', 'Edit')])
+
+    Scene.use_objectmode_filters_in_editmode = BoolProperty(default=False, name='Use object mode filters in edit mode', description='If enabled, object mode filters will be executed in edit mode too')
 
     # add keymap entry
     kc = bpy.context.window_manager.keyconfigs.addon
