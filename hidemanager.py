@@ -112,7 +112,6 @@ class HIDEMANAGER_OT_Force(Operator):
                             elif self.action == 'MARK_IGNORE':
                                 object.vertex_group_remove_from()
 
-
         return {'FINISHED'}
 
 
@@ -404,6 +403,17 @@ class HIDEMANAGER_OT_Selected(Operator):
                     if obj.type != item.object_type:
                         objectAction(self.operation, obj)
 
+                elif item.line_type == 'EXACT_OBJECT':
+                    if item.object is None:
+                        break
+                    objectAction(self.operation, item.object)
+
+                elif item.line_type == 'EXACT_OBJECT_IGNORE':
+                    if item.object is None:
+                        break
+                    if obj is not item.object:
+                        objectAction(self.operation, obj)
+
                 elif item.line_type == 'HIERARCHY':
                     if item.object is None:
                         break
@@ -550,7 +560,7 @@ class Filters:
     use_priority = False
     filter_count = 0
     non_ignorable_count = 0
-    priority = ['HIERARCHY', 'TYPE', 'CONTAINS', 'CONSTRAINT', 'COLLECTION', 'MODIFIER', 'MODIFIER_CONTAINS',
+    priority = ['EXACT_OBJECT', 'HIERARCHY', 'TYPE', 'CONTAINS', 'CONSTRAINT', 'COLLECTION', 'MODIFIER', 'MODIFIER_CONTAINS',
                 'MATERIAL', 'MATERIAL_CONTAINS', 'VERTEX_GROUP_CONTAINS', 'SHAPE_KEY_CONTAINS']
     operation = ''
     already_checked = None
@@ -617,6 +627,17 @@ class Filters:
 
     def TYPE_IGNORE(self, obj, value):
         if obj.type == value:
+            return True
+        return False
+
+    def EXACT_OBJECT(self, obj, value):
+        if obj == value:
+            objectAction(self.operation, obj)
+            return True
+        return False
+
+    def EXACT_OBJECT_IGNORE(self, obj, value):
+        if obj == value:
             return True
         return False
 
@@ -935,6 +956,19 @@ class HIDEMANAGER_OT_All(Operator):
                 self.filters_ignore.append('TYPE_IGNORE', item.object_type, True)
             else:
                 self.filters.append('TYPE_IGNORE', item.object_type, True)
+
+        elif item.line_type == 'EXACT_OBJECT':
+            if item.object is None:
+                return
+            self.filters.append('EXACT_OBJECT', item.object)
+
+        elif item.line_type == 'EXACT_OBJECT_IGNORE':
+            if item.object is None:
+                return
+            if not priority:
+                self.filters_ignore.append('EXACT_OBJECT_IGNORE', item.object, True)
+            else:
+                self.filters.append('EXACT_OBJECT_IGNORE', item.object, True)
 
         elif item.line_type == 'HIERARCHY':
             if item.object is None:

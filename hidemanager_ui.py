@@ -31,6 +31,10 @@ class HIDEMANAGER_UL_Items(UIList):
         elif item.line_type == 'TYPE_IGNORE':
             icon = item.bl_rna.properties['object_type'].enum_items[item.object_type].icon
             split.prop(item, 'object_type', text='', toggle=False, slider=True, icon=icon)
+        elif item.line_type == 'EXACT_OBJECT':
+            split.prop(item, 'object', text='', toggle=False, slider=True, icon='OBJECT_DATA')
+        elif item.line_type == 'EXACT_OBJECT_IGNORE':
+            split.prop(item, 'object', text='', toggle=False, slider=True, icon='OBJECT_DATA')
         elif item.line_type == 'HIERARCHY':
             split.prop(item, 'object', text='', toggle=False, slider=True, icon='OBJECT_DATA')
         elif item.line_type == 'HIERARCHY_IGNORE':

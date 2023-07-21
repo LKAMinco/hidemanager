@@ -1,9 +1,10 @@
+import logging
+
 import bpy
 from bpy.utils import previews
-from pathlib import Path
 from os import path
 
-icons_dir = str(Path(__file__).parent / 'icons')
+icons_dir = path.join(path.dirname(__file__), 'icons')
 
 icons = previews.new()
 
@@ -14,6 +15,7 @@ def unregister():
 
 icons_files = ['IGNORE',
                'TYPE_IGNORE',
+               'EXACT_OBJECT_IGNORE',
                'HIERARCHY_IGNORE',
                'COLLECTION_IGNORE',
                'MATERIAL_IGNORE',
