@@ -3,38 +3,42 @@ import logging
 import bpy
 from bpy.props import EnumProperty, StringProperty, BoolProperty, PointerProperty
 from bpy.types import PropertyGroup, Modifier, GpencilModifier, Constraint
-from .icons import icons
+from .hidemanager_utils import getIcon
 
 
-# TODO implement not implemented filters
-class HIDEMANAGER_PG_CustomCollectionFilters(PropertyGroup):
-    line_type: EnumProperty(default='CONTAINS', name='Filter type', items=[
+def itemsCallback(self, context):
+    items = [
         ('', 'Basic Filters', '', '', 0),
         ('CONTAINS', 'Contains', 'Filter will be applied to all objects with filled string in name', 'ALIGN_LEFT', 1),
-        ('IGNORE', 'Contains Ignore', 'Filter will ignore all objects with filled string in name', icons['IGNORE'].icon_id, 2),
+        ('IGNORE', 'Contains Ignore', 'Filter will ignore all objects with filled string in name', getIcon('IGNORE').icon_id, 2),
         ('TYPE', 'Type', 'Filter will be applied to selected type of objects', 'SCENE_DATA', 3),
-        ('TYPE_IGNORE', 'Type Ignore', 'Filter will ignore selected type of objects', icons['TYPE_IGNORE'].icon_id, 4),
+        ('TYPE_IGNORE', 'Type Ignore', 'Filter will ignore selected type of objects', getIcon('TYPE_IGNORE').icon_id, 4),
         ('EXACT_OBJECT', 'Exact Object', 'Filter will be applied to selected object', 'OBJECT_DATA', 5),
-        ('EXACT_OBJECT_IGNORE', 'Exact Object Ignore', 'Filter will ignore selected object', icons['EXACT_OBJECT_IGNORE'].icon_id, 6),
+        ('EXACT_OBJECT_IGNORE', 'Exact Object Ignore', 'Filter will ignore selected object', getIcon('EXACT_OBJECT_IGNORE').icon_id, 6),
         ('HIERARCHY', 'Hierarchy', 'Filter will be applied to object and all its children of this object', 'EMPTY_DATA', 7),
-        ('HIERARCHY_IGNORE', 'Hierarchy Ignore', 'Filter will ignore object and all its children of this object', icons['HIERARCHY_IGNORE'].icon_id, 8),
+        ('HIERARCHY_IGNORE', 'Hierarchy Ignore', 'Filter will ignore object and all its children of this object', getIcon('HIERARCHY_IGNORE').icon_id, 8),
         ('COLLECTION', 'Collection', 'Filter will be applied to all objects in selected collection', 'OUTLINER_COLLECTION', 9),
-        ('COLLECTION_IGNORE', 'Collection Ignore', 'Filter will ignore all objects in selected collection', icons['COLLECTION_IGNORE'].icon_id, 10),
+        ('COLLECTION_IGNORE', 'Collection Ignore', 'Filter will ignore all objects in selected collection', getIcon('COLLECTION_IGNORE').icon_id, 10),
         ('', 'Materials / Modifiers Filters', '', '', 0),
         ('MATERIAL', 'Material', 'Filter will be applied to all objects with selected material', 'MATERIAL_DATA', 11),
         ('MATERIAL_CONTAINS', 'Material Contains', 'Filter will be applied to all objects with material that contains selected string', 'MATERIAL_DATA', 12),
-        ('MATERIAL_IGNORE', 'Material Ignore', 'Filter will ignore all objects with selected material', icons['MATERIAL_IGNORE'].icon_id, 13),
+        ('MATERIAL_IGNORE', 'Material Ignore', 'Filter will ignore all objects with selected material', getIcon('MATERIAL_IGNORE').icon_id, 13),
         ('MODIFIER', 'Modifier', 'Filter will be applied to all objects which contains selected modifier', 'MODIFIER_DATA', 14),
         ('MODIFIER_CONTAINS', 'Modifier Contains', 'Filter will be applied to all objects which contains string in one of object modifiers', 'MODIFIER_DATA', 15),
-        ('MODIFIER_IGNORE', 'Modifier Ignore', 'Filter will ignore all objects which contains selected modifier', icons['MODIFIER_IGNORE'].icon_id, 16),
+        ('MODIFIER_IGNORE', 'Modifier Ignore', 'Filter will ignore all objects which contains selected modifier', getIcon('MODIFIER_IGNORE').icon_id, 16),
         ('', 'Object Data Filters', '', '', 0),
         ('VERTEX_GROUP_CONTAINS', 'Vertex Group Contains', 'Filter will be applied to all objects with vertex group which contains filled string', 'GROUP_VERTEX', 17),
-        ('VERTEX_GROUP_IGNORE', 'Vertex Group Ignore', 'Filter will ignore all objects with vertex group which contains filled string', icons['VERTEX_GROUP_IGNORE'].icon_id, 18),
+        ('VERTEX_GROUP_IGNORE', 'Vertex Group Ignore', 'Filter will ignore all objects with vertex group which contains filled string', getIcon('VERTEX_GROUP_IGNORE').icon_id, 18),
         ('SHAPE_KEY_CONTAINS', 'Shape Key Contains', 'Filter will be applied to all objects with shape key which contains filled string', 'SHAPEKEY_DATA', 19),
-        ('SHAPE_KEY_IGNORE', 'Shape Key Ignore', 'Filter will ignore all objects with shape key which contains filled string', icons['SHAPE_KEY_IGNORE'].icon_id, 20),
+        ('SHAPE_KEY_IGNORE', 'Shape Key Ignore', 'Filter will ignore all objects with shape key which contains filled string', getIcon('SHAPE_KEY_IGNORE').icon_id, 20),
         ('CONSTRAINT', 'Constraint', 'Filter will be applied to all objects which contains selected constraint', 'CONSTRAINT', 21),
-        ('CONSTRAINT_IGNORE', 'Constraint Ignore', 'Filter will ignore all objects which contains selected constraint', icons['CONSTRAINT_IGNORE'].icon_id, 22),
-    ])
+        ('CONSTRAINT_IGNORE', 'Constraint Ignore', 'Filter will ignore all objects which contains selected constraint', getIcon('CONSTRAINT_IGNORE').icon_id, 22),
+    ]
+    return items
+
+
+class HIDEMANAGER_PG_CustomCollectionFilters(PropertyGroup):
+    line_type: EnumProperty(default=0, name='Filter type', items=itemsCallback)
 
     object_type: EnumProperty(default='MESH', name='Object Type', description='Type of objects', items=[
         ('MESH', 'Mesh', 'Mesh', 'MESH_DATA', 1),
@@ -111,7 +115,7 @@ class HIDEMANAGER_PG_CustomCollectionFilters(PropertyGroup):
                                   items=constraint_items)
 
 
-class HIDEMAANGER_PG_CustomCollectionGroups(PropertyGroup):
+class HIDEMANAGER_PG_CustomCollectionGroups(PropertyGroup):
     group: StringProperty(default='', name='Group filters',
                           description='To make a group, fill this line with numbers (ids of filters from Hide Manager Filters) separated with comma or use range "first_id - last_id". Example: 1,8-10,7,3-5,12'
                                       '\nGroup filters uses both active and inactive filters from Hide Manager Filters !!!'
@@ -123,7 +127,7 @@ class HIDEMAANGER_PG_CustomCollectionGroups(PropertyGroup):
                               description='Enable / Disable group. In case of disable, group will be skipped')
 
 
-class HIDEMAANGER_PG_CustomCollectionEdit(PropertyGroup):
+class HIDEMANAGER_PG_CustomCollectionEdit(PropertyGroup):
     name: StringProperty(default='Change me', name='Name', description='Name of filter')
 
     line_enable: BoolProperty(default=True, name='Filter active state',

@@ -1,6 +1,8 @@
+import logging
+
 import bpy
 import rna_keymap_ui
-import logging
+from os import path
 
 context = bpy.context
 
@@ -8,6 +10,55 @@ has_material = ['MESH', 'CURVE', 'SURFACE', 'META', 'FONT', 'VOLUME', 'GPENCIL',
 has_modifier = ['MESH', 'CURVE', 'SURFACE', 'META', 'FONT', 'VOLUME', 'GPENCIL', 'GREASEPENCIL', 'LATTICE']
 has_vertex_group = ['MESH', 'LATTICE']
 has_shape_key = ['MESH', 'CURVE', 'SURFACE', 'LATTICE']
+
+icons = None
+
+
+def getDefaultIcon(name):
+    if name == 'CONTAINS':
+        return 'ALIGN_LEFT'
+    elif name == 'TYPE':
+        return 'SCENE_DATA'
+    elif name == 'EXACT_OBJECT':
+        return 'OBJECT_DATA'
+    elif name == 'HIERARCHY':
+        return 'EMPTY_DATA'
+    elif name == 'COLLECTION':
+        return 'OUTLINER_COLLECTION'
+    elif name == 'MATERIAL':
+        return 'MATERIAL_DATA'
+    elif name == 'MATERIAL_CONTAINS':
+        return 'MATERIAL_DATA'
+    elif name == 'MODIFIER':
+        return 'MODIFIER_DATA'
+    elif name == 'MODIFIER_CONTAINS':
+        return 'MODIFIER_DATA'
+    elif name == 'VERTEX_GROUP_CONTAINS':
+        return 'GROUP_VERTEX'
+    elif name == 'SHAPE_KEY_CONTAINS':
+        return 'SHAPEKEY_DATA'
+    elif name == 'CONSTRAINT':
+        return 'CONSTRAINT'
+
+
+def getAddonName():
+    try:
+        return path.basename(path.dirname(path.dirname(path.realpath(__file__))))
+    except:
+        return 'hidemanager_pro'
+
+
+def getAddonPrefs():
+    return bpy.context.preferences.addons[getAddonName()].preferences
+
+
+def getIcon(name):
+    global icons
+
+    if not icons:
+        from .. import icons
+
+    return icons[name]
 
 
 def objectAction(operation: str, obj: bpy.types.Object) -> None:
@@ -109,51 +160,50 @@ def drawSettingsItems(self, layout, context, enable_ui=None, label=None, use_ope
         if use_operation:
             row = box.row()
             row.label(text='Use in pie menu')
-            text = str(getattr(context.scene, 'hidemanager_' + use_operation))
-            row.prop(context.scene, 'hidemanager_' + use_operation, text=str(text), toggle=True)
-        if getattr(context.scene, 'hidemanager_' + use_operation):
+            text = str(getattr(self, use_operation))
+            row.prop(self, use_operation, text=str(text), toggle=True)
+        if getattr(self, use_operation):
             if use_icons:
                 row = box.row()
                 row.label(text='Use icons instead of text')
-                text = str(getattr(context.scene, 'hidemanager_' + use_icons))
-                row.prop(context.scene, 'hidemanager_' + use_icons, text=str(text), toggle=True)
+                text = str(getattr(self, use_icons))
+                row.prop(self, use_icons, text=str(text), toggle=True)
             if separated_ops:
                 row = box.row()
                 row.label(text='Use separated operations')
-                text = str(getattr(context.scene, 'hidemanager_' + separated_ops))
-                row.prop(context.scene, 'hidemanager_' + separated_ops, text=str(text), toggle=True)
+                text = str(getattr(self, separated_ops))
+                row.prop(self, separated_ops, text=str(text), toggle=True)
 
 
 def getText(enabled):
     if enabled == 'use_icons_hide':
-        if getattr(bpy.context.scene, 'hidemanager_use_icons_hide'):
+        if getattr(getAddonPrefs(), 'use_icons_hide'):
             return '', ''
         else:
             return 'Hide Objects', 'Show Objects'
     elif enabled == 'use_icons_select':
-        if getattr(bpy.context.scene, 'hidemanager_use_icons_select'):
+        if getattr(getAddonPrefs(), 'use_icons_select'):
             return '', ''
         else:
             return 'Select Objects', 'Deselect Objects'
     elif enabled == 'use_icons_render':
-        if getattr(bpy.context.scene, 'hidemanager_use_icons_render'):
+        if getattr(getAddonPrefs(), 'use_icons_render'):
             return '', ''
         else:
             return 'Disable in Renders', 'Enable in Renders'
     elif enabled == 'use_icons_viewport':
-        if getattr(bpy.context.scene, 'hidemanager_use_icons_viewport'):
+        if getattr(getAddonPrefs(), 'use_icons_viewport'):
             return '', ''
         else:
             return 'Disable in Viewport', 'Enable in Viewport'
     elif enabled == 'use_icons_force':
-        if getattr(bpy.context.scene, 'hidemanager_use_icons_force'):
-            if bpy.context.mode == 'EDIT_MESH' and not bpy.context.scene.use_objectmode_filters_in_editmode:
+        if getattr(getAddonPrefs(), 'use_icons_force'):
+            if bpy.context.mode == 'EDIT_MESH' and not getAddonPrefs().use_objectmode_filters_in_editmode:
                 return '', ''
             else:
                 return '', '', ''
         else:
-            if bpy.context.mode == 'EDIT_MESH' and not bpy.context.scene.use_objectmode_filters_in_editmode:
+            if bpy.context.mode == 'EDIT_MESH' and not getAddonPrefs().use_objectmode_filters_in_editmode:
                 return 'Assign', 'Remove'
             else:
                 return 'Mark', 'Unmark', 'Mark Ignore'
-

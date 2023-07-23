@@ -1,7 +1,7 @@
 import bpy
 from bpy.props import EnumProperty, BoolProperty, StringProperty
 from bpy.types import Operator
-from .hidemanager_utils import *
+from .hidemanager_utils import objectAction, has_material, has_modifier, has_vertex_group, has_shape_key
 from bpy.ops import object
 
 

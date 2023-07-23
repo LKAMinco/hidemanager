@@ -1,14 +1,13 @@
 import bpy
-from bpy.utils import previews
-
-from .hidemanager import *
-from .hidemanager_ui import *
-from .hidemanager_data import *
-from .hidemanager_utils import drawKeymapItems, drawSettingsItems
-from bpy.types import AddonPreferences, Scene, Object
-from bpy.props import IntProperty, BoolProperty, CollectionProperty
+import logging
+from .src.hidemanager import HIDEMANAGER_OT_Actions, HIDEMANAGER_OT_GroupActions, HIDEMANAGER_OT_EditActions, HIDEMANAGER_OT_State, HIDEMANAGER_OT_Selected, HIDEMANAGER_OT_All, HIDEMANAGER_OT_Edit, HIDEMANAGER_OT_Force
+from .src.hidemanager_ui import HIDEMANAGER_UL_Items, HIDEMANAGER_UL_GroupItems, HIDEMANAGER_UL_EditItems, HIDEMANAGER_MT_Menu, HIDEMANAGER_OT_MenuDialog, HIDEMANAGER_PT_List, HIDEMANAGER_PT_GroupList, HIDEMANAGER_PT_EditList
+from .src.hidemanager_data import HIDEMANAGER_PG_CustomCollectionFilters, HIDEMANAGER_PG_CustomCollectionGroups, HIDEMANAGER_PG_CustomCollectionEdit
+from .src.hidemanager_utils import drawKeymapItems, drawSettingsItems, getAddonPrefs
+from bpy.types import AddonPreferences, Scene, Object, PropertyGroup, Modifier, GpencilModifier, Constraint
+from bpy.props import IntProperty, BoolProperty, CollectionProperty, EnumProperty
 from bpy.utils import register_class, unregister_class
-from .icons import icons
+from .src.hidemanager_icons import regIcons, unregIcons
 
 bl_info = {
     "name": "HideManager Pro",
@@ -22,11 +21,12 @@ bl_info = {
 }
 
 addon_keymaps = []
+icons = None
 
 
 # Addon preferences
 class HIDEMANAGER_AddonPreferences(AddonPreferences):
-    bl_idname = __name__
+    bl_idname = __package__
 
     pop_hide: BoolProperty(default=False)
     pop_select: BoolProperty(default=False)
@@ -35,7 +35,27 @@ class HIDEMANAGER_AddonPreferences(AddonPreferences):
     pop_force: BoolProperty(default=False)
     pop_settings: BoolProperty(default=False)
 
+    use_hide: BoolProperty(default=True, description='Use Hide / Show operation in Pie Menu')
+    use_select: BoolProperty(default=True, description='Use Select / Deselect operation in Pie Menu')
+    use_render: BoolProperty(default=False, description='Use Disable / Enable in Renders operation in Pie Menu')
+    use_viewport: BoolProperty(default=False, description='Use Disable / Enable in Viewport operation in Pie Menu')
+    use_settings: BoolProperty(default=True, description='Use operations settings in Pie Menu')
+    use_force: BoolProperty(default=True, description='Use Force operations in Pie Menu')
+
+    use_icons_hide: BoolProperty(default=False)
+    use_separated_ops_hide: BoolProperty(default=False)
+    use_icons_select: BoolProperty(default=False)
+    use_separated_ops_select: BoolProperty(default=False)
+    use_icons_render: BoolProperty(default=False)
+    use_separated_ops_render: BoolProperty(default=False)
+    use_icons_viewport: BoolProperty(default=False)
+    use_separated_ops_viewport: BoolProperty(default=False)
+    use_icons_force: BoolProperty(default=False)
+
+    use_objectmode_filters_in_editmode: BoolProperty(default=True, name='Use object mode filters in edit mode', description='If enabled, object mode filters will be executed in edit mode too')
+
     def draw(self, context):
+        global icons
         row = self.layout.row()
         wm = bpy.context.window_manager
 
@@ -57,7 +77,7 @@ class HIDEMANAGER_AddonPreferences(AddonPreferences):
 
         row = box.row()
         row.label(text='Use object mode filters in edit mode')
-        row.prop(context.scene, 'use_objectmode_filters_in_editmode', text=str(context.scene.use_objectmode_filters_in_editmode), toggle=True)
+        row.prop(self, 'use_objectmode_filters_in_editmode', text=str(self.use_objectmode_filters_in_editmode), toggle=True)
 
         drawSettingsItems(self, box, context, 'pop_hide', 'Hide / Show operation', 'use_hide', 'use_icons_hide', 'use_separated_ops_hide')
         drawSettingsItems(self, box, context, 'pop_select', 'Select / Deselect operation', 'use_select', 'use_icons_select', 'use_separated_ops_select')
@@ -68,9 +88,10 @@ class HIDEMANAGER_AddonPreferences(AddonPreferences):
 
 
 classes = (
+    HIDEMANAGER_AddonPreferences,
     HIDEMANAGER_PG_CustomCollectionFilters,
-    HIDEMAANGER_PG_CustomCollectionGroups,
-    HIDEMAANGER_PG_CustomCollectionEdit,
+    HIDEMANAGER_PG_CustomCollectionGroups,
+    HIDEMANAGER_PG_CustomCollectionEdit,
     HIDEMANAGER_PT_List,
     HIDEMANAGER_PT_GroupList,
     HIDEMANAGER_PT_EditList,
@@ -86,18 +107,20 @@ classes = (
     HIDEMANAGER_OT_Edit,
     HIDEMANAGER_OT_Force,
     HIDEMANAGER_MT_Menu,
-    HIDEMANAGER_OT_MenuDialog,
-    HIDEMANAGER_AddonPreferences
+    HIDEMANAGER_OT_MenuDialog
 )
 
 
 def register():
+    global icons
+    icons = regIcons()
+
     for cls in classes:
         register_class(cls)
 
     Scene.hidemanager = CollectionProperty(type=HIDEMANAGER_PG_CustomCollectionFilters)
-    Scene.hidemanager_group = CollectionProperty(type=HIDEMAANGER_PG_CustomCollectionGroups)
-    Object.hidemanager_edit = CollectionProperty(type=HIDEMAANGER_PG_CustomCollectionEdit)
+    Scene.hidemanager_group = CollectionProperty(type=HIDEMANAGER_PG_CustomCollectionGroups)
+    Object.hidemanager_edit = CollectionProperty(type=HIDEMANAGER_PG_CustomCollectionEdit)
 
     Scene.hidemanager_index = IntProperty()
     Scene.hidemanager_only_active = BoolProperty(default=False, name='Only Selected', description='If enabled, only selected filter will be executed')
@@ -111,30 +134,11 @@ def register():
     Object.hidemanager_edit_index = IntProperty()
     Object.hidemanager_edit_only_active = BoolProperty(default=True, name='Only Selected', description='If enabled, only selected filter will be executed.')
 
-    Scene.hidemanager_use_hide = BoolProperty(default=True, description='Use Hide / Show operation in Pie Menu')
-    Scene.hidemanager_use_select = BoolProperty(default=True, description='Use Select / Deselect operation in Pie Menu')
-    Scene.hidemanager_use_render = BoolProperty(default=False, description='Use Disable / Enable in Renders operation in Pie Menu')
-    Scene.hidemanager_use_viewport = BoolProperty(default=False, description='Use Disable / Enable in Viewport operation in Pie Menu')
-    Scene.hidemanager_use_settings = BoolProperty(default=True, description='Use operations settings in Pie Menu')
-    Scene.hidemanager_use_force = BoolProperty(default=True, description='Use Force operations in Pie Menu')
-
     Scene.hidemanager_filters_enabled = BoolProperty(default=False)
     Scene.hidemanager_groups_enabled = BoolProperty(default=False)
 
-    Scene.hidemanager_use_icons_hide = BoolProperty(default=False)
-    Scene.hidemanager_use_separated_ops_hide = BoolProperty(default=False)
-    Scene.hidemanager_use_icons_select = BoolProperty(default=False)
-    Scene.hidemanager_use_separated_ops_select = BoolProperty(default=False)
-    Scene.hidemanager_use_icons_render = BoolProperty(default=False)
-    Scene.hidemanager_use_separated_ops_render = BoolProperty(default=False)
-    Scene.hidemanager_use_icons_viewport = BoolProperty(default=False)
-    Scene.hidemanager_use_separated_ops_viewport = BoolProperty(default=False)
-    Scene.hidemanager_use_icons_force = BoolProperty(default=False)
-
     Scene.hidemanager_pages = EnumProperty(default='FILTERS', items=[('FILTERS', 'Filters', 'Filters'), ('GROUPS', 'Groups', 'Groups')])
     Scene.hidemanager_edit_pages = EnumProperty(default='EDIT', items=[('FILTERS', 'Filters', 'Filters'), ('GROUPS', 'Groups', 'Groups'), ('EDIT', 'Edit', 'Edit')])
-
-    Scene.use_objectmode_filters_in_editmode = BoolProperty(default=False, name='Use object mode filters in edit mode', description='If enabled, object mode filters will be executed in edit mode too')
 
     # add keymap entry
     kc = bpy.context.window_manager.keyconfigs.addon
@@ -159,7 +163,8 @@ def unregister():
 
     addon_keymaps.clear()
 
-    previews.remove(icons)
+    global icons
+    unregIcons(icons)
 
     del Scene.hidemanager
     del Scene.hidemanager_group
@@ -176,19 +181,8 @@ def unregister():
     del Object.hidemanager_edit_index
     del Object.hidemanager_edit_only_active
 
-    del Scene.hidemanager_use_hide
-    del Scene.hidemanager_use_select
-    del Scene.hidemanager_use_render
-    del Scene.hidemanager_use_viewport
-    del Scene.hidemanager_use_settings
-    del Scene.hidemanager_use_force
+    del Scene.hidemanager_filters_enabled
+    del Scene.hidemanager_groups_enabled
 
-    del Scene.hidemanager_use_icons_hide
-    del Scene.hidemanager_use_separated_ops_hide
-    del Scene.hidemanager_use_icons_select
-    del Scene.hidemanager_use_separated_ops_select
-    del Scene.hidemanager_use_icons_render
-    del Scene.hidemanager_use_separated_ops_render
-    del Scene.hidemanager_use_icons_viewport
-    del Scene.hidemanager_use_separated_ops_viewport
-    del Scene.hidemanager_use_icons_force
+    del Scene.hidemanager_pages
+    del Scene.hidemanager_edit_pages

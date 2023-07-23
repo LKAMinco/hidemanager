@@ -2,8 +2,7 @@ import logging
 
 from bpy.props import EnumProperty, StringProperty, BoolProperty
 from bpy.types import PropertyGroup, UIList, Panel, Menu, Operator
-from .hidemanager_utils import getText
-from .icons import icons
+from .hidemanager_utils import getText, getIcon, getDefaultIcon, getAddonPrefs
 
 
 class HIDEMANAGER_UL_Items(UIList):
@@ -15,10 +14,9 @@ class HIDEMANAGER_UL_Items(UIList):
         split.label(text=str(index + 1) + '.')
         split = split.split(factor=0.3, align=True)
         if 'IGNORE' in item.line_type:
-            split.prop(item, 'line_type', text='', toggle=False, slider=True, icon_value=icons[item.line_type].icon_id)
+            split.prop(item, 'line_type', text='', toggle=False, slider=True, icon_value=getIcon(item.line_type).icon_id)
         else:
-            icon = item.bl_rna.properties['line_type'].enum_items[item.line_type].icon
-            split.prop(item, 'line_type', text='', toggle=False, slider=True, icon=icon)
+            split.prop(item, 'line_type', text='', toggle=False, slider=True, icon=getDefaultIcon(item.line_type))
 
         if item.line_type == 'CONTAINS':
             split.prop(item, 'contains', text='', toggle=False, slider=True, icon='ALIGN_LEFT')
@@ -87,7 +85,7 @@ class HIDEMANAGER_UL_GroupItems(UIList):
         split.label(text=str(index + 1) + '.')
         split = split.split(factor=0.25, align=True)
         split.prop(item, 'group_name', text='', toggle=False, slider=True, emboss=False)
-        split.prop(item, 'group', text='', toggle=False, slider=True, icon_value=icons['ID'].icon_id)
+        split.prop(item, 'group', text='', toggle=False, slider=True, icon_value=getIcon('ID').icon_id)
 
     def invoke(self, context, event):
         pass
@@ -108,7 +106,7 @@ class HIDEMANAGER_UL_EditItems(UIList):
 
         if item.line_type == 'MATERIAL':
             if item.material is not None:
-                split = split.split(factor=0.06)
+                split = split.split(factor=0.07, align=True)
                 icon = item.material.preview.icon_id
                 split.label(text="", icon_value=icon)
             split.prop(item, 'material', text='', toggle=False, slider=True, icon='MATERIAL')
@@ -403,7 +401,7 @@ class HIDEMANAGER_PT_List(Panel, PanelBase):
 
     @classmethod
     def poll(cls, context):
-        if context.mode == 'OBJECT' or context.scene.use_objectmode_filters_in_editmode:
+        if context.mode == 'OBJECT' or getAddonPrefs().use_objectmode_filters_in_editmode:
             return True
         return False
 
@@ -422,7 +420,7 @@ class HIDEMANAGER_PT_GroupList(Panel, PanelBase):
 
     @classmethod
     def poll(cls, context):
-        if context.mode == 'OBJECT' or context.scene.use_objectmode_filters_in_editmode:
+        if context.mode == 'OBJECT' or getAddonPrefs().use_objectmode_filters_in_editmode:
             return True
         return False
 
@@ -447,7 +445,7 @@ class HIDEMANAGER_MT_Menu(Menu):
     bl_label = ''
 
     def draw(self, context):
-        obj_in_edit = context.scene.use_objectmode_filters_in_editmode
+        obj_in_edit = getAddonPrefs().use_objectmode_filters_in_editmode
 
         pages = None
 
@@ -473,20 +471,20 @@ class HIDEMANAGER_MT_Menu(Menu):
 
         is_edit = context.mode == 'EDIT_MESH'
 
-        use_select = context.scene.hidemanager_use_select
-        use_separated_ops_select = context.scene.hidemanager_use_separated_ops_select
+        use_select = getAddonPrefs().use_select
+        use_separated_ops_select = getAddonPrefs().use_separated_ops_select
 
-        use_hide = context.scene.hidemanager_use_hide
-        use_separated_ops_hide = context.scene.hidemanager_use_separated_ops_hide
+        use_hide = getAddonPrefs().use_hide
+        use_separated_ops_hide = getAddonPrefs().use_separated_ops_hide
 
-        use_render = context.scene.hidemanager_use_render
-        use_separated_ops_render = context.scene.hidemanager_use_separated_ops_render
+        use_render = getAddonPrefs().use_render
+        use_separated_ops_render = getAddonPrefs().use_separated_ops_render
 
-        use_viewport = context.scene.hidemanager_use_viewport
-        use_separated_ops_viewport = context.scene.hidemanager_use_separated_ops_viewport
+        use_viewport = getAddonPrefs().use_viewport
+        use_separated_ops_viewport = getAddonPrefs().use_separated_ops_viewport
 
-        use_force = context.scene.hidemanager_use_force
-        use_settings = context.scene.hidemanager_use_settings
+        use_force = getAddonPrefs().use_force
+        use_settings = getAddonPrefs().use_settings
 
         if is_edit and not obj_in_edit:
             hdmg_op = 'hidemanager.edit'
@@ -614,14 +612,14 @@ class HIDEMANAGER_OT_MenuDialog(Operator, PanelBase):
         return context.window_manager.invoke_popup(self, width=450)
 
     def draw(self, context):
-        if context.mode == 'EDIT_MESH' and not context.scene.use_objectmode_filters_in_editmode:
+        if context.mode == 'EDIT_MESH' and not getAddonPrefs().use_objectmode_filters_in_editmode:
             self.drawEditPanel(context)
         else:
             layout = self.layout
             row = layout.row(align=True)
 
             pages = None
-            if context.scene.use_objectmode_filters_in_editmode:
+            if getAddonPrefs().use_objectmode_filters_in_editmode:
                 if context.mode == 'EDIT_MESH':
                     row.prop(context.scene, 'hidemanager_edit_pages', expand=True)
                     pages = context.scene.hidemanager_edit_pages
