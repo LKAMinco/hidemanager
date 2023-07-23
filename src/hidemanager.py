@@ -326,6 +326,7 @@ class HIDEMANAGER_OT_Selected(Operator):
     operation: EnumProperty(default='SELECT', items=[
         ('SELECT', 'Select', 'Select objects by selected filter'),
         ('DESELECT', 'Deselect', 'Deselect objects by selected filter'),
+        ('SELECT_INVERT', 'Select Invert', 'Select inverse objects by selected filter'),
         ('HIDE', 'Hide', 'Hide objects by selected filter'),
         ('SHOW', 'Show', 'Show objects by selected filter'),
         ('ENABLE_RENDER', 'Enable Render', 'Enable objects in render by selected filter'),
@@ -340,6 +341,8 @@ class HIDEMANAGER_OT_Selected(Operator):
             return 'Select objects by selected filter'
         elif properties.operation == 'DESELECT':
             return 'Deselect objects by selected filter'
+        elif properties.operation == 'SELECT_INVERT':
+            return 'Select inverse objects by selected filter'
         elif properties.operation == 'HIDE':
             return 'Hide objects by selected filter'
         elif properties.operation == 'SHOW':
@@ -360,6 +363,12 @@ class HIDEMANAGER_OT_Selected(Operator):
             item = scene.hidemanager[index]
         except IndexError:
             self.forceOperation(scene)
+
+            if context.mode == 'OBJECT':
+                if self.operation == 'SELECT_INVERT':
+                    bpy.ops.object.select_all(action='INVERT')
+            else:
+                self.report({'WARNING'}, 'This operation is not available in edit mode')
         else:
             already_checked = []
 
@@ -532,6 +541,11 @@ class HIDEMANAGER_OT_Selected(Operator):
                     if item.constraint_type not in con_types:
                         objectAction(self.operation, obj)
 
+        if context.mode == 'OBJECT':
+            if self.operation == 'SELECT_INVERT':
+                bpy.ops.object.select_all(action='INVERT')
+        else:
+            self.report({'WARNING'}, 'This operation is not available in edit mode')
         return {'FINISHED'}
 
     def forceOperation(self, scene):
@@ -818,6 +832,7 @@ class HIDEMANAGER_OT_All(Operator):
     operation: EnumProperty(default='SELECT', items=[
         ('SELECT', 'Select', 'Select objects by selected filter'),
         ('DESELECT', 'Deselect', 'Deselect objects by selected filter'),
+        ('SELECT_INVERT', 'Select Invert', 'Select inverse objects by selected filter'),
         ('HIDE', 'Hide', 'Hide objects by selected filter'),
         ('SHOW', 'Show', 'Show objects by selected filter'),
         ('ENABLE_RENDER', 'Enable Render', 'Enable objects in render by selected filter'),
@@ -840,6 +855,8 @@ class HIDEMANAGER_OT_All(Operator):
             return 'Select objects by %s' % hdmg_context
         elif properties.operation == 'DESELECT':
             return 'Deselect objects by %s' % hdmg_context
+        elif properties.operation == 'SELECT_INVERT':
+            return 'Select inverse objects by %s' % hdmg_context
         elif properties.operation == 'HIDE':
             return 'Hide objects by %s' % hdmg_context
         elif properties.operation == 'SHOW':
@@ -861,6 +878,12 @@ class HIDEMANAGER_OT_All(Operator):
                 if 'force_state' in obj.keys():
                     if obj['force_state'] == 'MARK':
                         objectAction(self.operation, obj)
+
+            if context.mode == 'OBJECT':
+                if self.operation == 'SELECT_INVERT':
+                    bpy.ops.object.select_all(action='INVERT')
+            else:
+                self.report({'WARNING'}, 'This operation is not available in edit mode')
             return {'FINISHED'}
 
         self.clear()
@@ -892,6 +915,11 @@ class HIDEMANAGER_OT_All(Operator):
                     continue
                 self.filters.execFilters(obj)
 
+        if context.mode == 'OBJECT':
+            if self.operation == 'SELECT_INVERT':
+                bpy.ops.object.select_all(action='INVERT')
+        else:
+            self.report({'WARNING'}, 'This operation is not available in edit mode')
         return {'FINISHED'}
 
     def getConfig(self, context):
@@ -1142,8 +1170,9 @@ class HIDEMANAGER_OT_Edit(Operator):
     bl_options = {'REGISTER'}
 
     operation: EnumProperty(default='SELECT', items=[
-        ('SELECT', 'Select', 'Select objects by selected filter'),
-        ('DESELECT', 'Deselect', 'Deselect objects by selected filter'),
+        ('SELECT', 'Select', 'Select mesh by selected filter'),
+        ('DESELECT', 'Deselect', 'Deselect mesh by selected filter'),
+        ('SELECT_INVERT', 'Select Invert', 'Select inverse mesh by selected filter'),
         ('HIDE', 'Hide', 'Hide objects by selected filter'),
         ('SHOW', 'Show', 'Show objects by selected filter'),
     ])
@@ -1157,13 +1186,15 @@ class HIDEMANAGER_OT_Edit(Operator):
         else:
             txt = 'all enabled filters'
         if properties.operation == 'SELECT':
-            return 'Select objects by %s' % txt
+            return 'Select mesh by %s' % txt
         elif properties.operation == 'DESELECT':
-            return 'Deselect objects by %s' % txt
+            return 'Deselect mesh by %s' % txt
+        elif properties.operation == 'SELECT_INVERT':
+            return 'Select inverse mesh by %s' % txt
         elif properties.operation == 'HIDE':
-            return 'Hide objects by %s' % txt
+            return 'Hide mesh by %s' % txt
         elif properties.operation == 'SHOW':
-            return 'Show objects by %s' % txt
+            return 'Show mesh by %s' % txt
 
     def execute(self, context):
         scene = context.scene
@@ -1198,13 +1229,18 @@ class HIDEMANAGER_OT_Edit(Operator):
                 elif filter.line_type == 'VERTEX_GROUP_CONTAINS':
                     self.vertexGroupContains(obj, filter.contains)
 
+        if context.mode == 'EDIT_MESH':
+            if self.operation == 'SELECT_INVERT':
+                    bpy.ops.mesh.select_all(action='INVERT')
+        else:
+            self.report({'WARNING'}, 'Edit mode is not active')
         return {'FINISHED'}
 
     def material(self, obj, material):
         material_idx = obj.data.materials.find(material.name)
         if material_idx == -1:
             return
-        if self.operation == 'SELECT':
+        if self.operation == 'SELECT' or self.operation == 'SELECT_INVERT':
             obj.active_material_index = material_idx
             object.material_slot_select()
         elif self.operation == 'DESELECT':
@@ -1224,7 +1260,7 @@ class HIDEMANAGER_OT_Edit(Operator):
         for mat in obj.data.materials:
             if contains in mat.name:
                 material_idx = obj.data.materials.find(mat.name)
-                if self.operation == 'SELECT':
+                if self.operation == 'SELECT' or self.operation == 'SELECT_INVERT':
                     obj.active_material_index = material_idx
                     object.material_slot_select()
                 elif self.operation == 'DESELECT':
@@ -1243,7 +1279,7 @@ class HIDEMANAGER_OT_Edit(Operator):
     def vertexGroupContains(self, obj, contains):
         for vgroup in obj.vertex_groups:
             if contains in vgroup.name:
-                if self.operation == 'SELECT':
+                if self.operation == 'SELECT' or self.operation == 'SELECT_INVERT':
                     obj.vertex_groups.active_index = vgroup.index
                     object.vertex_group_select()
                 elif self.operation == 'DESELECT':

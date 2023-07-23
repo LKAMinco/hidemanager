@@ -176,6 +176,7 @@ class PanelBase:
             hdmg_op = 'hidemanager.all'
 
         row.operator(hdmg_op, text='Select Objects', icon='RESTRICT_SELECT_OFF').operation = 'SELECT'
+        row.operator(hdmg_op, text='Select Invert Objects', icon='UV_SYNC_SELECT').operation = 'SELECT_INVERT'
         row.operator(hdmg_op, text='Deselect Objects', icon='RESTRICT_SELECT_ON').operation = 'DESELECT'
 
         row = col.row(align=True)
@@ -277,6 +278,10 @@ class PanelBase:
         op = row.operator(hdmg_op, text='Select Objects', icon='RESTRICT_SELECT_OFF')
         op.operation = 'SELECT'
         op.group = True
+
+        op = row.operator(hdmg_op, text='Select Invert Objects', icon='UV_SYNC_SELECT')
+        op.operation = 'SELECT_INVERT'
+        op = True
 
         op = row.operator(hdmg_op, text='Deselect Objects', icon='RESTRICT_SELECT_ON')
         op.operation = 'DESELECT'
@@ -380,14 +385,13 @@ class PanelBase:
         hdmg_op = 'hidemanager.edit'
 
         row = col.row(align=True)
-        row.operator(hdmg_op, text='Select Objects', icon='RESTRICT_SELECT_OFF').operation = 'SELECT'
-
-        row.operator(hdmg_op, text='Deselect Objects', icon='RESTRICT_SELECT_ON').operation = 'DESELECT'
+        row.operator(hdmg_op, text='Select Mesh', icon='RESTRICT_SELECT_OFF').operation = 'SELECT'
+        row.operator(hdmg_op, text='Select Invert Mesh', icon='UV_SYNC_SELECT').operation = 'SELECT_INVERT'
+        row.operator(hdmg_op, text='Deselect Mesh', icon='RESTRICT_SELECT_ON').operation = 'DESELECT'
 
         row = col.row(align=True)
-        row.operator(hdmg_op, text='Hide Objects', icon='HIDE_ON').operation = 'HIDE'
-
-        row.operator(hdmg_op, text='Show Objects', icon='HIDE_OFF').operation = 'SHOW'
+        row.operator(hdmg_op, text='Hide Mesh', icon='HIDE_ON').operation = 'HIDE'
+        row.operator(hdmg_op, text='Show Mesh', icon='HIDE_OFF').operation = 'SHOW'
 
 
 class HIDEMANAGER_PT_List(Panel, PanelBase):
@@ -511,7 +515,11 @@ class HIDEMANAGER_MT_Menu(Menu):
             op.operation = 'SELECT'
             if hdmg_op == 'hidemanager.all':
                 op.group = groups
-            op = layout.operator(hdmg_op, text=text[1], icon='RESTRICT_SELECT_ON')
+            op = layout.operator(hdmg_op, text=text[1], icon='UV_SYNC_SELECT')
+            op.operation = 'SELECT_INVERT'
+            if hdmg_op == 'hidemanager.all':
+                op.group = groups
+            op = layout.operator(hdmg_op, text=text[2], icon='RESTRICT_SELECT_ON')
             op.operation = 'DESELECT'
             if hdmg_op == 'hidemanager.all':
                 op.group = groups

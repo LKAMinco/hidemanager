@@ -68,7 +68,7 @@ def objectAction(operation: str, obj: bpy.types.Object) -> None:
     :return: None
     """
 
-    if operation == 'SELECT':
+    if operation == 'SELECT' or operation == 'SELECT_INVERT':
         obj.select_set(True)
     elif operation == 'DESELECT':
         obj.select_set(False)
@@ -183,9 +183,9 @@ def getText(enabled):
             return 'Hide Objects', 'Show Objects'
     elif enabled == 'use_icons_select':
         if getattr(getAddonPrefs(), 'use_icons_select'):
-            return '', ''
+            return '', '', ''
         else:
-            return 'Select Objects', 'Deselect Objects'
+            return 'Select Objects', 'Select Invert objects', 'Deselect Objects'
     elif enabled == 'use_icons_render':
         if getattr(getAddonPrefs(), 'use_icons_render'):
             return '', ''
