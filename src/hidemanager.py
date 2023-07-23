@@ -358,9 +358,6 @@ class HIDEMANAGER_OT_Selected(Operator):
         index = scene.hidemanager_index
         try:
             item = scene.hidemanager[index]
-            if not item.line_enable:
-                self.forceOperation(scene)
-                return {'FINISHED'}
         except IndexError:
             self.forceOperation(scene)
         else:
