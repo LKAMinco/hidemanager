@@ -368,7 +368,7 @@ class HIDEMANAGER_OT_Selected(Operator):
 
             if context.mode == 'OBJECT' and self.operation == 'SELECT_INVERT':
                 bpy.ops.object.select_all(action='INVERT')
-            else:
+            elif context.mode == 'EDIT_MESH' and self.operation == 'SELECT_INVERT':
                 self.report({'WARNING'}, 'This operation is not available in edit mode')
         else:
             already_checked = []
@@ -545,7 +545,7 @@ class HIDEMANAGER_OT_Selected(Operator):
 
         if context.mode == 'OBJECT' and self.operation == 'SELECT_INVERT':
             bpy.ops.object.select_all(action='INVERT')
-        else:
+        elif context.mode == 'EDIT_MESH' and self.operation == 'SELECT_INVERT':
             self.report({'WARNING'}, 'This operation is not available in edit mode')
         return {'FINISHED'}
 
@@ -886,7 +886,7 @@ class HIDEMANAGER_OT_All(Operator):
 
             if context.mode == 'OBJECT' and self.operation == 'SELECT_INVERT':
                 bpy.ops.object.select_all(action='INVERT')
-            else:
+            elif context.mode == 'EDIT_MESH' and self.operation == 'SELECT_INVERT':
                 self.report({'WARNING'}, 'This operation is not available in edit mode')
             return {'FINISHED'}
 
@@ -921,7 +921,7 @@ class HIDEMANAGER_OT_All(Operator):
 
         if context.mode == 'OBJECT' and self.operation == 'SELECT_INVERT':
             bpy.ops.object.select_all(action='INVERT')
-        else:
+        elif context.mode == 'EDIT_MESH' and self.operation == 'SELECT_INVERT':
             self.report({'WARNING'}, 'This operation is not available in edit mode')
         return {'FINISHED'}
 
@@ -1234,7 +1234,7 @@ class HIDEMANAGER_OT_Edit(Operator):
 
         if context.mode == 'EDIT_MESH' and self.operation == 'SELECT_INVERT':
             bpy.ops.mesh.select_all(action='INVERT')
-        else:
+        elif context.mode == 'OBJECT' and self.operation == 'SELECT_INVERT':
             self.report({'WARNING'}, 'Edit mode is not active')
         return {'FINISHED'}
 
