@@ -281,7 +281,7 @@ class PanelBase:
 
         op = row.operator(hdmg_op, text='Select Invert Objects', icon='UV_SYNC_SELECT')
         op.operation = 'SELECT_INVERT'
-        op = True
+        op.group = True
 
         op = row.operator(hdmg_op, text='Deselect Objects', icon='RESTRICT_SELECT_ON')
         op.operation = 'DESELECT'
