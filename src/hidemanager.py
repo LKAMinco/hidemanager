@@ -366,9 +366,8 @@ class HIDEMANAGER_OT_Selected(Operator):
         except IndexError:
             self.forceOperation(scene)
 
-            if context.mode == 'OBJECT':
-                if self.operation == 'SELECT_INVERT':
-                    bpy.ops.object.select_all(action='INVERT')
+            if context.mode == 'OBJECT' and self.operation == 'SELECT_INVERT':
+                bpy.ops.object.select_all(action='INVERT')
             else:
                 self.report({'WARNING'}, 'This operation is not available in edit mode')
         else:
@@ -544,9 +543,8 @@ class HIDEMANAGER_OT_Selected(Operator):
                     if item.constraint_type not in con_types:
                         objectAction(self.operation, obj)
 
-        if context.mode == 'OBJECT':
-            if self.operation == 'SELECT_INVERT':
-                bpy.ops.object.select_all(action='INVERT')
+        if context.mode == 'OBJECT' and self.operation == 'SELECT_INVERT':
+            bpy.ops.object.select_all(action='INVERT')
         else:
             self.report({'WARNING'}, 'This operation is not available in edit mode')
         return {'FINISHED'}
@@ -886,9 +884,8 @@ class HIDEMANAGER_OT_All(Operator):
                     if obj['force_state'] == 'MARK':
                         objectAction(self.operation, obj)
 
-            if context.mode == 'OBJECT':
-                if self.operation == 'SELECT_INVERT':
-                    bpy.ops.object.select_all(action='INVERT')
+            if context.mode == 'OBJECT' and self.operation == 'SELECT_INVERT':
+                bpy.ops.object.select_all(action='INVERT')
             else:
                 self.report({'WARNING'}, 'This operation is not available in edit mode')
             return {'FINISHED'}
@@ -922,9 +919,8 @@ class HIDEMANAGER_OT_All(Operator):
                     continue
                 self.filters.execFilters(obj)
 
-        if context.mode == 'OBJECT':
-            if self.operation == 'SELECT_INVERT':
-                bpy.ops.object.select_all(action='INVERT')
+        if context.mode == 'OBJECT' and self.operation == 'SELECT_INVERT':
+            bpy.ops.object.select_all(action='INVERT')
         else:
             self.report({'WARNING'}, 'This operation is not available in edit mode')
         return {'FINISHED'}
@@ -1236,9 +1232,8 @@ class HIDEMANAGER_OT_Edit(Operator):
                 elif filter.line_type == 'VERTEX_GROUP_CONTAINS':
                     self.vertexGroupContains(obj, filter.contains)
 
-        if context.mode == 'EDIT_MESH':
-            if self.operation == 'SELECT_INVERT':
-                bpy.ops.mesh.select_all(action='INVERT')
+        if context.mode == 'EDIT_MESH' and self.operation == 'SELECT_INVERT':
+            bpy.ops.mesh.select_all(action='INVERT')
         else:
             self.report({'WARNING'}, 'Edit mode is not active')
         return {'FINISHED'}
