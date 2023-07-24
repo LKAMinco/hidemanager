@@ -1,3 +1,5 @@
+import logging
+
 import bpy
 from bpy.props import EnumProperty, BoolProperty, StringProperty
 from bpy.types import Operator
@@ -379,6 +381,7 @@ class HIDEMANAGER_OT_Selected(Operator):
                     continue
 
                 if 'force_state' in obj.keys():
+                    self.report({'INFO'}, 'Force used in execution')
                     if obj['force_state'] == 'MARK':
                         objectAction(self.operation, obj)
                         already_checked.append(obj)
@@ -551,6 +554,7 @@ class HIDEMANAGER_OT_Selected(Operator):
     def forceOperation(self, scene):
         for obj in scene.view_layers[0].objects:
             if 'force_state' in obj.keys():
+                self.report({'INFO'}, 'Force used in execution')
                 if obj['force_state'] == 'MARK':
                     objectAction(self.operation, obj)
 
@@ -576,6 +580,7 @@ class Filters:
 
     def execFilters(self, obj):
         if 'force_state' in obj.keys():
+            self.report({'INFO'}, 'Force used in execution')
             if obj['force_state'] == 'MARK':
                 objectAction(self.operation, obj)
                 self.already_checked.append(obj)
@@ -786,6 +791,7 @@ class FiltersIgnore(Filters):
 
     def execFilters(self, obj):
         if 'force_state' in obj.keys():
+            self.report({'INFO'}, 'Force used in execution')
             if obj['force_state'] == 'MARK':
                 objectAction(self.operation, obj)
                 self.already_checked.append(obj)
@@ -876,6 +882,7 @@ class HIDEMANAGER_OT_All(Operator):
         if len(scene.hidemanager) == 0:
             for obj in scene.view_layers[0].objects:
                 if 'force_state' in obj.keys():
+                    self.report({'INFO'}, 'Force used in execution')
                     if obj['force_state'] == 'MARK':
                         objectAction(self.operation, obj)
 
@@ -1231,7 +1238,7 @@ class HIDEMANAGER_OT_Edit(Operator):
 
         if context.mode == 'EDIT_MESH':
             if self.operation == 'SELECT_INVERT':
-                    bpy.ops.mesh.select_all(action='INVERT')
+                bpy.ops.mesh.select_all(action='INVERT')
         else:
             self.report({'WARNING'}, 'Edit mode is not active')
         return {'FINISHED'}
